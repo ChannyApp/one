@@ -17,7 +17,7 @@ object Extractor {
         text
       )
 
-    println(allMatches)
+    //    println(allMatches)
 
     val cleanContent = allMatches
       .foldLeft((text, 0))(

@@ -13,3 +13,5 @@ libraryDependencies ++= Seq(
   "org.jsoup" % "jsoup" % "1.11.3",
 )
 
+test in assembly := {}
+assemblyJarName in assembly := s"server.jar"
