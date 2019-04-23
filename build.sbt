@@ -1,4 +1,4 @@
-name := "one_scala"
+name := "one"
 
 version := "0.1"
 
