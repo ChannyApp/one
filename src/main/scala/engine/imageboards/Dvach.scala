@@ -9,8 +9,8 @@ import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse
 import engine.imageboards.DvachStructs.{DvachBoardsResponse, DvachPostsResponse, DvachThreadsResponse}
 import engine.utils.{Extracted, RegExpRule}
 import org.jsoup.Jsoup
-import spray.json._
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -30,62 +30,23 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
-  //  override val regExps: List[RegExpRule] = List(
-  //    RegExpRule(
-  //      raw"""<strong>(.*?)</strong>""".r,
-  //      "bold"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<b>(.*?)</b>""".r,
-  //      "bold"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<em>(.*?)</em>""".r,
-  //      "italics"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<span class="unkfunc">(.*?)<\/span>""".r,
-  //      "quote"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<span class="spoiler">(.*?)<\/span>""".r,
-  //      "spoiler"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<span class="s">(.*?)<\/span>""".r,
-  //      "strikethrough"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<span class="u">(.*?)<\/span>""".r,
-  //      "underline"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<a class="hashlink" href="(.*?)" .+?>(.*?)<\/a>""".r,
-  //      "internal"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<a href="([^"]*)">(.*?)<\/a>""".r,
-  //      "external"
-  //    ),
-  //    RegExpRule(
-  //      raw"""<a.+?class="post-reply-link".+?data-num="(.*?)">.+?<\/a>""".r,
-  //      "reply"
-  //    ),
-  //  )
-
   override val regExps: List[RegExpRule] = List(
     RegExpRule(
-      raw"""<([\/]?strong)>""".r,
+      openRegex = raw"""<(strong)>""".r,
+      closeRegex = raw"""<(\/strong)>""".r,
       "bold"
     ),
     RegExpRule(
-      raw"""<([\/]?b)>""".r,
+      openRegex = raw"""<(b)>""".r,
+      closeRegex = raw"""<(\/b)>""".r,
       "bold"
     ),
     RegExpRule(
-      raw"""<([\/]?em)>""".r,
+      openRegex = raw"""<(em)>""".r,
+      closeRegex = raw"""<(\/em)>""".r,
       "italics"
     ),
+
   )
 
   println(s"[$name] Ready")
@@ -163,12 +124,12 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                           file =>
                             File(
                               name = file.fullname.getOrElse(file.displayname),
-                              full = this.baseURL + file.path,
-                              thumbnail = this.baseURL + file.thumbnail
+                              full = this.baseURL.concat(file.path),
+                              thumbnail = this.baseURL.concat(file.thumbnail)
                             )
                         )
                   )
-                  .getOrElse(List[File]()),
+                  .getOrElse(List.empty),
                 extracted.decorations,
                 extracted.links,
                 extracted.replies
@@ -216,12 +177,12 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                             file =>
                               File(
                                 name = file.fullname.getOrElse(file.displayname),
-                                full = this.baseURL + file.path,
-                                thumbnail = this.baseURL + file.thumbnail
+                                full = this.baseURL.concat(file.path),
+                                thumbnail = this.baseURL.concat(file.thumbnail)
                               )
                           )
                     )
-                    .getOrElse(List[File]()),
+                    .getOrElse(List.empty),
                   extracted.decorations,
                   extracted.links,
                   extracted.replies
