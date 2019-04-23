@@ -7,20 +7,24 @@ import scala.util.matching.Regex
 
 object Extractor {
   def apply(text: String, regExpRules: List[RegExpRule]): Extracted = {
-    val allMatches = this.rulesToMatches(text, regExpRules)
+    val partiallyCleaned = text
+      .replaceAll("<br>", "\n")
+      .replaceAll("<p>", "\n")
+      .replaceAll("</p>", "\n")
+      .trim()
+
+    val allMatches = this.rulesToMatches(partiallyCleaned, regExpRules)
 
     if (allMatches.isEmpty)
       return Extracted(
         List.empty,
         List.empty,
         List.empty,
-        text
+        partiallyCleaned
       )
 
-    // println(allMatches)
-
-    val cleanContent = allMatches
-      .foldLeft((text, 0))(
+    val cleanedContent = allMatches
+      .foldLeft((partiallyCleaned, 0))(
         (accumulator, current) => {
           val content = accumulator._1
             .patch(
@@ -47,8 +51,6 @@ object Extractor {
       )._1.reverse
 
 
-    //    println(cleanMatches)
-
     val extracted = this.extractMarkups(cleanMatches.toVector)
     // println(extracted)
 
@@ -56,11 +58,7 @@ object Extractor {
       decorations = extracted.decorations,
       links = extracted.links,
       replies = extracted.replies,
-      content = cleanContent
-        .replaceAll("<br>", "\n")
-        .replaceAll("<p>", "\n")
-        .replaceAll("</p>", "\n")
-        .trim()
+      content = cleanedContent
     )
   }
 
