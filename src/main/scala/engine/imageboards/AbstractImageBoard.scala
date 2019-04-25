@@ -4,13 +4,12 @@ package engine.imageboards
 import akka.http.scaladsl.HttpExt
 import akka.stream.ActorMaterializer
 import engine.entities.BoardImplicits._
-import engine.entities.{Board, Post, Thread}
-import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse}
-import engine.utils.{Extracted, Extractor, RegExpRule}
-import spray.json.DefaultJsonProtocol._
-import spray.json._
-import engine.entities.ThreadImplicits._
 import engine.entities.PostImplicits._
+import engine.entities.ThreadImplicits._
+import engine.entities.{Board, Post, Thread}
+import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.utils.{Extracted, Extractor, RegExpRule}
+import spray.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,9 +32,9 @@ abstract class AbstractImageBoard(implicit executionContext: ExecutionContext, m
 
   def fetchPosts(board: String, thread: Int, since: Int): Future[FetchPostsResponse]
 
-  def fetchMarkups(text: String): Extracted = {
-    Extractor(text, this.regExps)
-  }
+  def fetchMarkups(text: String): Extracted = Extractor(text, this.regExps)
+
+  def formatPost(post: FormatPostRequest): FormatPostResponse
 }
 
 object AbstractImageBoardImplicits extends DefaultJsonProtocol {
@@ -58,21 +57,45 @@ object AbstractImageBoardImplicits extends DefaultJsonProtocol {
     override def read(json: JsValue): AbstractImageBoard = ???
   }
 
-  implicit val fetchPostsResponseFormat: RootJsonFormat[FetchPostsResponse] = jsonFormat2(FetchPostsResponse)
-  implicit val captchaFormat: RootJsonFormat[Captcha] = jsonFormat2(Captcha)
+  implicit def formatPostResponseFormat: RootJsonFormat[FormatPostResponse] =
+    jsonFormat2(FormatPostResponse)
+
+  implicit val fetchPostsResponseFormat: RootJsonFormat[FetchPostsResponse] =
+    jsonFormat2(FetchPostsResponse)
+  implicit val captchaFormat: RootJsonFormat[Captcha] =
+    jsonFormat2(Captcha)
+  implicit val formatPostRequestFormat: RootJsonFormat[FormatPostRequest] =
+    jsonFormat5(FormatPostRequest)
 
 }
 
 object AbstractImageBoardStructs {
 
-  case class FetchPostsResponse(
-                                 thread: Thread,
-                                 posts: List[Post]
-                               )
+  case class FetchPostsResponse
+  (
+    thread: Thread,
+    posts: List[Post]
+  )
 
-  case class Captcha(
-                      kind: String,
-                      key: String
-                    )
+  case class Captcha
+  (
+    kind: String,
+    key: String
+  )
+
+  case class FormatPostRequest
+  (
+    board: String,
+    thread: String,
+    text: String,
+    images: Int,
+    captcha: Option[String]
+  )
+
+  case class FormatPostResponse
+  (
+    url: String,
+    data: JsValue
+  )
 
 }

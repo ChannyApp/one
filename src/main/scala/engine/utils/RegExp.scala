@@ -119,8 +119,12 @@ object Extractor {
     // println(matches)
     val head = matches.head
 
-    // TO FIX!
-    val matchX = matches.indexWhere(m => m.neededContent == "/" + head.neededContent)
+    // TO FIX!!!
+    val match1 = matches.indexWhere(m => m.neededContent == "/" + head.neededContent)
+    // val match2 = matches.lastIndexWhere(m => m.neededContent == "/span")
+
+    val matchX = match1
+
     if (matchX < 0) {
       println(s"BAD MARKUP? ${head.regexMatch.source}")
       println(matches.patch(0, Vector(), 1))

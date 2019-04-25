@@ -6,9 +6,9 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.ActorMaterializer
 import com.github.benmanes.caffeine.cache.Caffeine
-import engine.entities.{Post, Thread}
-import engine.imageboards.AbstractImageBoardStructs.FetchPostsResponse
-import engine.imageboards.{AbstractImageBoard, Dvach}
+import engine.entities.Thread
+import engine.imageboards.AbstractImageBoardStructs.{FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.{AbstractImageBoard, Dvach, FourChan}
 import scalacache._
 import scalacache.caffeine._
 import scalacache.modes.try_._
@@ -20,7 +20,8 @@ class Engine(implicit actorSystem: ActorSystem, materializer: ActorMaterializer,
   implicit val client: HttpExt = Http()
 
   val imageboards: List[AbstractImageBoard] = List(
-    new Dvach()
+    new Dvach(),
+    new FourChan(),
   )
 
   implicit val threadsCache: Cache[Future[List[Thread]]] = CaffeineCache(
@@ -49,9 +50,10 @@ class Engine(implicit actorSystem: ActorSystem, materializer: ActorMaterializer,
     val key = id + board
 
     caching(key)(ttl = None) {
-      this.getImageBoardByID(id)
+      this
+        .getImageBoardByID(id)
         .map(imageboard => imageboard.fetchThreads(board))
-        .getOrElse(Future(List[Thread]()))
+        .getOrElse(Future(List.empty[Thread]))
     }.get
   }
 
@@ -59,18 +61,17 @@ class Engine(implicit actorSystem: ActorSystem, materializer: ActorMaterializer,
     val key = id + board + thread + since
 
     caching(key)(ttl = None) {
-      this.getImageBoardByID(id)
+      this
+        .getImageBoardByID(id)
         .map(imageboard => imageboard.fetchPosts(board, thread, since))
-        .getOrElse(Future(FetchPostsResponse(
-          thread = Thread(
-            "", "", "", 0, 0, List.empty, List.empty, List.empty, List.empty
-          ),
-          posts = List.empty
-        )))
+        .orNull
     }.get
   }
 
-  def formatImageBoardPost(id: Int): Post = {
-    ???
+  def formatImageBoardPost(id: Int, formatPostRequest: FormatPostRequest): FormatPostResponse = {
+    this
+      .getImageBoardByID(id)
+      .map(imageboard => imageboard.formatPost(formatPostRequest))
+      .orNull
   }
 }

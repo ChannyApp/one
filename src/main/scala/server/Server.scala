@@ -9,6 +9,7 @@ import akka.stream.ActorMaterializer
 import engine.Engine
 import engine.entities.ThreadImplicits._
 import engine.imageboards.AbstractImageBoardImplicits._
+import engine.imageboards.AbstractImageBoardStructs.FormatPostRequest
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}
@@ -19,7 +20,7 @@ class Server(engine: Engine)(implicit actorSystem: ActorSystem, materializer: Ac
 
   val route: Route =
     get {
-      path("") {
+      pathEndOrSingleSlash {
         complete(engine.fetchImageBoards())
       } ~
         path(IntNumber / Segment) {
@@ -34,7 +35,17 @@ class Server(engine: Engine)(implicit actorSystem: ActorSystem, materializer: Ac
           case (imageBoardID, boardID, threadID, postNumber) =>
             complete(engine.fetchImageBoardPosts(imageBoardID, boardID, threadID, postNumber))
         }
-    }
+    } ~
+      post {
+        path("format" / IntNumber) {
+          imageBoardID => {
+            entity(as[FormatPostRequest]) {
+              postRequest =>
+                complete(engine.formatImageBoardPost(imageBoardID, postRequest))
+            }
+          }
+        }
+      }
 
   Http()
     .bindAndHandle(route, "0.0.0.0", 80)

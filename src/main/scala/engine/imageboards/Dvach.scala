@@ -5,8 +5,9 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import engine.entities.{Board, File, Post, Thread}
-import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse}
-import engine.imageboards.DvachStructs.{DvachBoardsResponse, DvachPostsResponse, DvachThreadsResponse}
+import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.DvachImplicits._
+import engine.imageboards.DvachStructs._
 import engine.utils.{Extracted, RegExpRule}
 import org.jsoup.Jsoup
 import spray.json.DefaultJsonProtocol._
@@ -46,7 +47,26 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
       closeRegex = raw"""<(\/em)>""".r,
       "italics"
     ),
-
+    //    RegExpRule(
+    //      openRegex = raw"""<(span class="unkfunc")>""".r,
+    //      closeRegex = raw"""<span class="unkfunc">.*<(\/span)>""".r,
+    //      "quote"
+    //    ),
+    //    RegExpRule(
+    //      openRegex = raw"""<(span class="spoiler")>""".r,
+    //      closeRegex = raw"""<span class="spoiler">.*<(\/span)>""".r,
+    //      "spoiler"
+    //    ),
+    //    RegExpRule(
+    //      openRegex = raw"""<(span class="s")>""".r,
+    //      closeRegex = raw"""<span class="s">.*<(\/span)>""".r,
+    //      "strikethrough"
+    //    ),
+    //    RegExpRule(
+    //      openRegex = raw"""<(span class="u")>""".r,
+    //      closeRegex = raw"""<span class="u">.*<(\/span)>""".r,
+    //      "underline"
+    //    ),
   )
 
   println(s"[$name] Ready")
@@ -212,40 +232,82 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
         }
       )
   }
+
+  override def formatPost(post: FormatPostRequest): FormatPostResponse = {
+    FormatPostResponse(
+      url = s"${this.baseURL}/makaba/posting.fcgi",
+      data = DvachFormatPostData(
+        board = post.board,
+        thread = post.thread,
+        subject = post.text,
+        comment = post.text,
+        images = List.tabulate[String](post.images)(x => s"image${x + 1}"),
+        `captcha-key` = this.captcha.key,
+        `g-recaptcha-response` = post.captcha
+      ).toJson
+    )
+  }
 }
 
 object DvachStructs {
 
-  case class DvachBoardsResponse(
-                                  id: String,
-                                  name: String
-                                )
+  case class DvachBoardsResponse
+  (
+    id: String,
+    name: String
+  )
 
-  case class DvachFileResponse(
-                                fullname: Option[String],
-                                displayname: String,
-                                path: String,
-                                thumbnail: String
-                              )
+  case class DvachFileResponse
+  (
+    fullname: Option[String],
+    displayname: String,
+    path: String,
+    thumbnail: String
+  )
 
-  case class DvachThreadsResponse(
-                                   num: String,
-                                   subject: String,
-                                   comment: String,
-                                   posts_count: Int,
-                                   timestamp: Int,
-                                   files: Option[List[DvachFileResponse]]
-                                 )
+  case class DvachThreadsResponse
+  (
+    num: String,
+    subject: String,
+    comment: String,
+    posts_count: Int,
+    timestamp: Int,
+    files: Option[List[DvachFileResponse]]
+  )
 
-  case class DvachPostsResponse(
-                                 num: String,
-                                 comment: String,
-                                 timestamp: Int,
-                                 files: Option[List[DvachFileResponse]]
-                               )
+  case class DvachPostsResponse
+  (
+    num: String,
+    comment: String,
+    timestamp: Int,
+    files: Option[List[DvachFileResponse]]
+  )
 
-  implicit val dvachBoardsResponseFormat: RootJsonFormat[DvachBoardsResponse] = jsonFormat2(DvachBoardsResponse)
-  implicit val dvachFileResponseFormat: RootJsonFormat[DvachFileResponse] = jsonFormat4(DvachFileResponse)
-  implicit val dvachThreadsResponseFormat: RootJsonFormat[DvachThreadsResponse] = jsonFormat6(DvachThreadsResponse)
-  implicit val dvachPostsResponseFormat: RootJsonFormat[DvachPostsResponse] = jsonFormat4(DvachPostsResponse)
+  case class DvachFormatPostData
+  (
+    json: Int = 1,
+    task: String = "post",
+    board: String,
+    thread: String,
+    subject: String,
+    comment: String,
+    images: List[String],
+    `captcha_type`: String = "recaptcha",
+    `captcha-key`: String,
+    `g-recaptcha-response`: Option[String]
+  )
+
+}
+
+object DvachImplicits {
+  implicit val dvachBoardsResponseFormat: RootJsonFormat[DvachBoardsResponse] =
+    jsonFormat2(DvachBoardsResponse)
+  implicit val dvachFileResponseFormat: RootJsonFormat[DvachFileResponse] =
+    jsonFormat4(DvachFileResponse)
+  implicit val dvachThreadsResponseFormat: RootJsonFormat[DvachThreadsResponse] =
+    jsonFormat6(DvachThreadsResponse)
+  implicit val dvachPostsResponseFormat: RootJsonFormat[DvachPostsResponse] =
+    jsonFormat4(DvachPostsResponse)
+  implicit val DvachFormatPostDataFormat: RootJsonFormat[DvachFormatPostData] =
+    jsonFormat10(DvachFormatPostData)
 }
