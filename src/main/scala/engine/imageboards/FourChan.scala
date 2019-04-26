@@ -112,20 +112,23 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
               _
                 .map(
                   thread => {
-                    val extracted = this.fetchMarkups(thread.com)
+                    val extracted = this.fetchMarkups(thread.com.getOrElse(""))
                     Thread(
                       id = thread.no.toString,
                       subject = extracted.content,
                       content = extracted.content,
                       postsCount = thread.replies,
                       timestampt = thread.time,
-                      files = List(
-                        File(
-                          name = thread.filename,
-                          full = s"https://i.4cdn.org/$board/${thread.tim.toString.concat(thread.ext)}",
-                          thumbnail = s"https://i.4cdn.org/$board/${thread.tim}.jpg"
-                        )
-                      ),
+                      files = thread.filename
+                        .map(
+                          filename => List(
+                            File(
+                              name = filename,
+                              full = s"https://i.4cdn.org/$board/${thread.tim.get.toString.concat(thread.ext.get)}",
+                              thumbnail = s"https://i.4cdn.org/$board/${thread.tim}.jpg"
+                            )
+                          )
+                        ).getOrElse(List.empty),
                       extracted.decorations,
                       extracted.links,
                       extracted.replies,
@@ -241,12 +244,12 @@ object FourChanStructs {
   case class FourChanThreadsResponse
   (
     no: Int,
-    com: String,
+    com: Option[String],
     replies: Int,
     time: Int,
-    filename: String,
-    tim: Int,
-    ext: String
+    filename: Option[String],
+    tim: Option[Int],
+    ext: Option[String]
   )
 
   case class FourChanPostsResponse
