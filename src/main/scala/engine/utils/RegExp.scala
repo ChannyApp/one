@@ -1,6 +1,7 @@
 package engine.utils
 
 import engine.entities.{DecorationMarkup, LinkMarkup, ReplyMarkup}
+import org.jsoup.Jsoup
 
 import scala.util.matching.Regex
 
@@ -11,11 +12,12 @@ object Extractor {
       .replaceAll("<br>", "\n")
       .replaceAll("<p>", "\n")
       .replaceAll("</p>", "\n")
+      .replaceAll("\n+", "\n")
       .trim()
 
-    val allMatches = this.rulesToMatches(partiallyCleaned, regExpRules)
+    val allPairs = this.rulesToMatchPairs(partiallyCleaned, regExpRules)
 
-    if (allMatches.isEmpty)
+    if (allPairs.isEmpty)
       return Extracted(
         List.empty,
         List.empty,
@@ -23,46 +25,60 @@ object Extractor {
         partiallyCleaned
       )
 
-    val cleanedContent = allMatches
+    val cleanedContent = allPairs
       .foldLeft((partiallyCleaned, 0))(
         (accumulator, current) => {
           val content = accumulator._1
             .patch(
-              current.start - accumulator._2,
+              current.open.start - accumulator._2,
               "",
-              current.length
+              current.open.length
             )
-          (content, accumulator._2 + current.length)
+            .patch(
+              current.close.start - current.open.length - accumulator._2,
+              "",
+              current.close.length
+            )
+
+          (content, accumulator._2 + current.open.length + current.close.length)
         }
       )._1
 
-    val cleanMatches = allMatches
-      .foldLeft(List.empty[RegExpMatch], 0)(
+    val cleanedPairs = allPairs
+      .foldLeft((List.empty[MatchPair], 0))(
         (accumulator, current) => {
-          val newMatch = RegExpMatch(
-            start = current.start - accumulator._2,
-            length = current.length,
-            neededContent = current.neededContent,
-            regexMatch = current.regexMatch,
-            kind = current.kind
+          val updatedMatch = MatchPair(
+            open = RegExpMatch(
+              start = current.open.start - accumulator._2,
+              length = current.open.length,
+              regexMatch = current.open.regexMatch,
+              kind = current.open.kind
+            ),
+            close = RegExpMatch(
+              start = current.close.start - current.open.length - accumulator._2,
+              length = current.close.length,
+              regexMatch = current.close.regexMatch,
+              kind = current.close.kind
+            )
           )
-          (newMatch :: accumulator._1, accumulator._2 + current.length)
+          (
+            accumulator._1 ::: List(updatedMatch),
+            accumulator._2 + current.open.length + current.close.length
+          )
         }
-      )._1.reverse
+      )._1
 
-
-    val extracted = this.extractMarkups(cleanMatches.toVector)
-    // println(extracted)
+    val extracted = this.extractMarkups(cleanedPairs)
 
     Extracted(
       decorations = extracted.decorations,
       links = extracted.links,
       replies = extracted.replies,
-      content = cleanedContent
+      content = Jsoup.parse(cleanedContent).text
     )
   }
 
-  def rulesToMatches(text: String, regExpRules: List[RegExpRule]): List[RegExpMatch] = {
+  def rulesToMatchPairs(text: String, regExpRules: List[RegExpRule]): List[MatchPair] = {
     regExpRules
       .flatMap(
         regExpRule => {
@@ -75,7 +91,6 @@ object Extractor {
                 RegExpMatch(
                   start = m.start,
                   length = m.end - m.start,
-                  neededContent = m.group(1),
                   regexMatch = m,
                   kind = regExpRule.kind
                 )
@@ -88,90 +103,90 @@ object Extractor {
             .map(
               m =>
                 RegExpMatch(
-                  start = m.start,
-                  length = m.end - m.start,
-                  neededContent = m.group(1),
+                  start = m.end - m.group(1).length,
+                  length = m.end - (m.end - m.group(1).length),
                   regexMatch = m,
                   kind = regExpRule.kind
                 )
             )
 
-          openMatches ::: closeMatches
+          val allPairs: List[MatchPair] = openMatches
+            .zip(closeMatches)
+            .map(
+              pair => MatchPair(
+                open = pair._1,
+                close = pair._2
+              )
+            )
+
+          allPairs
         }
       )
-      .sortWith((m1, m2) => {
-        m1.regexMatch.start < m2.regexMatch.start
-      })
+      .sortWith((m1, m2) => m1.open.start < m2.open.start)
   }
 
-  def extractMarkups(matches: Vector[RegExpMatch], accumulator: Extracted = Extracted()): Extracted = {
-    if (matches.isEmpty) {
-      // println(accumulator.decorations)
-      return Extracted(
-        decorations = accumulator.decorations,
-        links = accumulator.links,
-        replies = accumulator.replies,
-        content = accumulator.content
-      )
-    }
+  def extractMarkups(pairs: List[MatchPair]): Extracted = {
+    pairs.foldLeft(Extracted())(
+      (accumulator, current) => {
 
-
-    // println(matches)
-    val head = matches.head
-
-    // TO FIX!!!
-    val match1 = matches.indexWhere(m => m.neededContent == "/" + head.neededContent)
-    // val match2 = matches.lastIndexWhere(m => m.neededContent == "/span")
-
-    val matchX = match1
-
-    if (matchX < 0) {
-      println(s"BAD MARKUP? ${head.regexMatch.source}")
-      println(matches.patch(0, Vector(), 1))
-
-      return extractMarkups(
-        matches.patch(0, Vector(), 1),
-        accumulator
-      )
-    }
-
-    val extracted = head.kind match {
-      case _ => Extracted(
-        decorations = accumulator.decorations ::: List(DecorationMarkup(
-          start = head.start,
-          end = matches(matchX).start,
-          kind = head.kind
-        )),
-        links = accumulator.links,
-        replies = accumulator.replies,
-        content = accumulator.content
-      )
-    }
-
-    extractMarkups(
-      matches.tail.patch(matchX - 1, Vector(), 1),
-      extracted
+        current.open.kind match {
+          case "reply" =>
+            Extracted(
+              decorations = accumulator.decorations,
+              links = accumulator.links,
+              replies = accumulator.replies ::: List(
+                ReplyMarkup(
+                  start = current.open.start,
+                  end = current.close.start,
+                  kind = "reply",
+                  thread = current.open.regexMatch.group(2),
+                  post = current.open.regexMatch.group(3)
+                )
+              )
+            )
+          case _ =>
+            Extracted(
+              decorations = accumulator.decorations ::: List(
+                DecorationMarkup(
+                  start = current.open.start,
+                  end = current.close.start,
+                  kind = current.open.kind
+                )
+              ),
+              links = accumulator.links,
+              replies = accumulator.replies,
+            )
+        }
+      }
     )
   }
 }
 
-case class RegExpRule(
-                       openRegex: Regex,
-                       closeRegex: Regex,
-                       kind: String
-                     )
+case class RegExpRule
+(
+  openRegex: Regex,
+  closeRegex: Regex,
+  kind: String
+)
 
-case class RegExpMatch(
-                        start: Int,
-                        length: Int,
-                        neededContent: String,
-                        regexMatch: Regex.Match,
-                        kind: String
-                      )
+case class RegExpMatch
+(
+  start: Int,
+  length: Int,
+  regexMatch: Regex.Match,
+  kind: String
+)
 
-case class Extracted(
-                      decorations: List[DecorationMarkup] = List.empty,
-                      links: List[LinkMarkup] = List.empty,
-                      replies: List[ReplyMarkup] = List.empty,
-                      content: String = ""
-                    )
+case class MatchPair
+(
+  open: RegExpMatch,
+  close: RegExpMatch
+)
+
+case class Extracted
+(
+  decorations: List[DecorationMarkup] = List.empty,
+  links: List[LinkMarkup] = List.empty,
+  replies: List[ReplyMarkup] = List.empty,
+  content: String = ""
+)

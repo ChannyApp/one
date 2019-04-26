@@ -19,9 +19,11 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
   override val id: Int = 1
   override val name: String = "4chan"
   override val baseURL: String = "https://a.4cdn.org"
-  override val captcha: Captcha = Captcha(
-    kind = "reCAPTCHA v2",
-    key = "6Ldp2bsSAAAAAAJ5uyx_lx34lJeEpTLVkP5k04qc"
+  override val captcha: Option[Captcha] = Some(
+    Captcha(
+      kind = "reCAPTCHA v2",
+      key = "6Ldp2bsSAAAAAAJ5uyx_lx34lJeEpTLVkP5k04qc"
+    )
   )
   override val maxImages: Int = 1
   override val logo: String = "https://s.4cdn.org/image/fp/logo-transparent.png"
@@ -31,16 +33,21 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
   override val regExps: List[RegExpRule] = List(
-    //    RegExpRule(
-    //      openRegex = raw"""<span class="quote">>""".r,
-    //      closeRegex = raw"""<span class="quote">><(\/span)>""".r,
-    //      "quote"
-    //    ),
-    //    RegExpRule(
-    //      openRegex = raw"""<span class="deadlink">>""".r,
-    //      closeRegex = raw"""<span class="deadlink">><(\/span)>""".r,
-    //      "strikethrough"
-    //    ),
+    RegExpRule(
+      openRegex = raw"""(<span class="quote">)""".r,
+      closeRegex = raw"""<span class="quote">.*(<\/span>)""".r,
+      "quote"
+    ),
+    RegExpRule(
+      openRegex = raw"""(<span class="deadlink">)""".r,
+      closeRegex = raw"""<span class="deadlink">.*(<\/span>)""".r,
+      "strikethrough"
+    ),
+    RegExpRule(
+      openRegex = raw"""(<a ()href="#p(.*)" class="quotelink">)""".r,
+      closeRegex = raw"""<a.*class="quotelink">.*(<\/a>)""".r,
+      "reply"
+    ),
   )
 
   println(s"[$name] Ready")
@@ -129,9 +136,9 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
                             )
                           )
                         ).getOrElse(List.empty),
-                      extracted.decorations,
-                      extracted.links,
-                      extracted.replies,
+                      decorations = extracted.decorations,
+                      links = extracted.links,
+                      replies = extracted.replies,
                     )
                   }
                 )
@@ -182,9 +189,19 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
                         )
                       )
                   ).getOrElse(List.empty),
-                extracted.decorations,
-                extracted.links,
-                extracted.replies
+                decorations = extracted.decorations,
+                links = extracted.links,
+                replies = extracted.replies.map(
+                  reply =>
+                    ReplyMarkup(
+                      start = reply.start,
+                      end = reply.end,
+                      kind = reply.kind,
+                      thread = post.resto.toString,
+                      post = reply.post
+                    )
+                ),
+                selfReplies = List.empty
               )
             }
           )
@@ -192,7 +209,6 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
       .map(
         formattedPosts => {
           val originalPost: Post = formattedPosts.head
-
           FetchPostsResponse(
             thread = Thread(
               id = originalPost.id,
@@ -215,6 +231,29 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
               ),
             ),
             posts = formattedPosts
+              .map(
+                post =>
+                  Post(
+                    id = post.id,
+                    content = post.content,
+                    timestamp = post.timestamp,
+                    files = post.files,
+                    decorations = post.decorations,
+                    links = post.links,
+                    replies = post.replies,
+                    selfReplies = formattedPosts
+                      .foldLeft(List.empty[String])(
+                        (accumulator, current) => {
+                          val isReply = current.replies.exists(rp => rp.post == post.id)
+                          if (isReply)
+                            accumulator ::: List(current.id)
+                          else
+                            accumulator
+                        }
+                      )
+                  )
+              )
+              .drop(since)
           )
         }
       )
@@ -255,6 +294,7 @@ object FourChanStructs {
   case class FourChanPostsResponse
   (
     no: Int,
+    resto: Int,
     com: Option[String],
     time: Int,
     filename: Option[String],
@@ -280,7 +320,7 @@ object FourChanImplicits {
   implicit val fourChanThreadsResponseFormat: RootJsonFormat[FourChanThreadsResponse] =
     jsonFormat7(FourChanThreadsResponse)
   implicit val fourChanPostsResponseFormat: RootJsonFormat[FourChanPostsResponse] =
-    jsonFormat6(FourChanPostsResponse)
+    jsonFormat7(FourChanPostsResponse)
   implicit val fourChanFormatPostDataFormat: RootJsonFormat[FourChanFormatPostData] =
     jsonFormat6(FourChanFormatPostData)
 }

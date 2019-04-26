@@ -8,7 +8,7 @@ import akka.stream.ActorMaterializer
 import com.github.benmanes.caffeine.cache.Caffeine
 import engine.entities.Thread
 import engine.imageboards.AbstractImageBoardStructs.{FetchPostsResponse, FormatPostRequest, FormatPostResponse}
-import engine.imageboards.{AbstractImageBoard, Dvach, FourChan}
+import engine.imageboards.{AbstractImageBoard, Dvach, FourChan, Lolifox}
 import scalacache._
 import scalacache.caffeine._
 import scalacache.modes.try_._
@@ -22,6 +22,7 @@ class Engine(implicit actorSystem: ActorSystem, materializer: ActorMaterializer,
   val imageboards: List[AbstractImageBoard] = List(
     new Dvach(),
     new FourChan(),
+    new Lolifox(),
   )
 
   implicit val threadsCache: Cache[Future[List[Thread]]] = CaffeineCache(

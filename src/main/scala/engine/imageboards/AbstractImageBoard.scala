@@ -17,7 +17,7 @@ abstract class AbstractImageBoard(implicit executionContext: ExecutionContext, m
   val id: Int
   val name: String
   val baseURL: String
-  val captcha: Captcha
+  val captcha: Option[Captcha]
   val maxImages: Int
   val logo: String
   val highlight: String
@@ -37,7 +37,7 @@ abstract class AbstractImageBoard(implicit executionContext: ExecutionContext, m
   def formatPost(post: FormatPostRequest): FormatPostResponse
 }
 
-object AbstractImageBoardImplicits extends DefaultJsonProtocol {
+object AbstractImageBoardImplicits extends DefaultJsonProtocol with NullOptions {
 
   implicit object AbstractImageBoardFormat extends RootJsonFormat[AbstractImageBoard] {
     override def write(imageBoard: AbstractImageBoard): JsValue = {
@@ -55,6 +55,8 @@ object AbstractImageBoardImplicits extends DefaultJsonProtocol {
     }
 
     override def read(json: JsValue): AbstractImageBoard = ???
+
+
   }
 
   implicit def formatPostResponseFormat: RootJsonFormat[FormatPostResponse] =

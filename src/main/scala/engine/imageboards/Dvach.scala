@@ -20,9 +20,11 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
   override val id: Int = 0
   override val name: String = "Двач"
   override val baseURL: String = "https://2ch.hk"
-  override val captcha: Captcha = Captcha(
-    kind = "reCAPTCHA v2",
-    key = "6LdwXD4UAAAAAHxyTiwSMuge1-pf1ZiEL4qva_xu"
+  override val captcha: Option[Captcha] = Some(
+    Captcha(
+      kind = "reCAPTCHA v2",
+      key = "6LdwXD4UAAAAAHxyTiwSMuge1-pf1ZiEL4qva_xu"
+    )
   )
   override val maxImages: Int = 4
   override val logo: String = "https://2ch.hk/newtest/resources/images/dvlogo.png"
@@ -33,40 +35,46 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
 
   override val regExps: List[RegExpRule] = List(
     RegExpRule(
-      openRegex = raw"""<(strong)>""".r,
-      closeRegex = raw"""<(\/strong)>""".r,
+      openRegex = raw"""(<strong>)""".r,
+      closeRegex = raw"""(<\/strong>)""".r,
       "bold"
     ),
     RegExpRule(
-      openRegex = raw"""<(b)>""".r,
-      closeRegex = raw"""<(\/b)>""".r,
+      openRegex = raw"""(<b>)""".r,
+      closeRegex = raw"""(<\/b>)""".r,
       "bold"
     ),
     RegExpRule(
-      openRegex = raw"""<(em)>""".r,
-      closeRegex = raw"""<(\/em)>""".r,
+      openRegex = raw"""(<em>)""".r,
+      closeRegex = raw"""(<\/em>)""".r,
       "italics"
     ),
-    //    RegExpRule(
-    //      openRegex = raw"""<(span class="unkfunc")>""".r,
-    //      closeRegex = raw"""<span class="unkfunc">.*<(\/span)>""".r,
-    //      "quote"
-    //    ),
-    //    RegExpRule(
-    //      openRegex = raw"""<(span class="spoiler")>""".r,
-    //      closeRegex = raw"""<span class="spoiler">.*<(\/span)>""".r,
-    //      "spoiler"
-    //    ),
-    //    RegExpRule(
-    //      openRegex = raw"""<(span class="s")>""".r,
-    //      closeRegex = raw"""<span class="s">.*<(\/span)>""".r,
-    //      "strikethrough"
-    //    ),
-    //    RegExpRule(
-    //      openRegex = raw"""<(span class="u")>""".r,
-    //      closeRegex = raw"""<span class="u">.*<(\/span)>""".r,
-    //      "underline"
-    //    ),
+    RegExpRule(
+      openRegex = raw"""(<span class="unkfunc">)""".r,
+      closeRegex = raw"""<span class="unkfunc">.*(<\/span>)""".r,
+      "quote"
+    ),
+    RegExpRule(
+      openRegex = raw"""(<span class="spoiler">)""".r,
+      closeRegex = raw"""<span class="spoiler">.*(<\/span>)""".r,
+      "spoiler"
+    ),
+    RegExpRule(
+      openRegex = raw"""(<span class="s">)""".r,
+      closeRegex = raw"""<span class="s">.*(<\/span>)""".r,
+      "strikethrough"
+    ),
+    RegExpRule(
+      openRegex = raw"""(<span class="u">)""".r,
+      closeRegex = raw"""<span class="u">.*(<\/span>)""".r,
+      "underline"
+    ),
+    RegExpRule(
+      openRegex = raw"""(<a.*class="post-reply-link".*data-thread="(.*)".*data-num="(.*)">)""".r,
+      closeRegex = raw"""<a.*class="post-reply-link".*>.*(<\/a>)""".r,
+      "reply"
+    ),
+
   )
 
   println(s"[$name] Ready")
@@ -75,7 +83,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
     val response: Future[HttpResponse] = client
       .singleRequest(
         HttpRequest(
-          uri = s"$baseURL/makaba/mobile.fcgi?task=get_boards"
+          uri = s"${this.baseURL}/makaba/mobile.fcgi?task=get_boards"
         )
       )
 
@@ -106,7 +114,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
     val response: Future[HttpResponse] = client
       .singleRequest(
         HttpRequest(
-          uri = s"$baseURL/$board/catalog.json"
+          uri = s"${this.baseURL}/$board/catalog.json"
         )
       )
 
@@ -131,7 +139,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
               val extracted = this.fetchMarkups(thread.comment)
               Thread(
                 id = thread.num,
-                subject = Jsoup.parse(thread.subject).text(),
+                subject = Jsoup.parse(thread.subject).text,
                 content = extracted.content,
                 postsCount = thread.posts_count,
                 timestampt = thread.timestamp,
@@ -150,9 +158,9 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                         )
                   )
                   .getOrElse(List.empty),
-                extracted.decorations,
-                extracted.links,
-                extracted.replies
+                decorations = extracted.decorations,
+                links = extracted.links,
+                replies = extracted.replies
               )
             }
           )
@@ -163,7 +171,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
     val response: Future[HttpResponse] = client
       .singleRequest(
         HttpRequest(
-          uri = s"$baseURL/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}"
+          uri = s"${this.baseURL}/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}"
         )
       )
 
@@ -203,9 +211,10 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                           )
                     )
                     .getOrElse(List.empty),
-                  extracted.decorations,
-                  extracted.links,
-                  extracted.replies
+                  decorations = extracted.decorations,
+                  links = extracted.links,
+                  replies = extracted.replies,
+                  selfReplies = List.empty
                 )
               }
             )
@@ -214,7 +223,6 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
       .map(
         formattedPosts => {
           val originalPost: Post = formattedPosts.head
-
           FetchPostsResponse(
             thread = Thread(
               id = originalPost.id,
@@ -228,6 +236,28 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
               replies = originalPost.replies,
             ),
             posts = formattedPosts
+              .map(
+                post =>
+                  Post(
+                    id = post.id,
+                    content = post.content,
+                    timestamp = post.timestamp,
+                    files = post.files,
+                    decorations = post.decorations,
+                    links = post.links,
+                    replies = post.replies,
+                    selfReplies = formattedPosts
+                      .foldLeft(List.empty[String])(
+                        (accumulator, current) => {
+                          val isReply = current.replies.exists(rp => rp.post == post.id)
+                          if (isReply)
+                            accumulator ::: List(current.id)
+                          else
+                            accumulator
+                        }
+                      )
+                  )
+              )
           )
         }
       )
@@ -242,7 +272,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
         subject = post.text,
         comment = post.text,
         images = List.tabulate[String](post.images)(x => s"image${x + 1}"),
-        `captcha-key` = this.captcha.key,
+        `captcha-key` = this.captcha.get.key,
         `g-recaptcha-response` = post.captcha
       ).toJson
     )

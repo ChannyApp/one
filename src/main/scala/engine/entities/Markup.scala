@@ -25,7 +25,7 @@ case class ReplyMarkup
   end: Int,
   kind: String,
   thread: String,
-  post: Int
+  post: String
 )
 
 
