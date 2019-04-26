@@ -1,7 +1,7 @@
 package engine.utils
 
 import engine.entities.{DecorationMarkup, LinkMarkup, ReplyMarkup}
-import org.jsoup.Jsoup
+import org.jsoup.parser.Parser
 
 import scala.util.matching.Regex
 
@@ -13,7 +13,6 @@ object Extractor {
       .replaceAll("<p>", "\n")
       .replaceAll("</p>", "\n")
       .replaceAll("\n+", "\n")
-      .trim()
 
     val allPairs = this.rulesToMatchPairs(partiallyCleaned, regExpRules)
 
@@ -74,7 +73,7 @@ object Extractor {
       decorations = extracted.decorations,
       links = extracted.links,
       replies = extracted.replies,
-      content = Jsoup.parse(cleanedContent).text
+      content = Parser.unescapeEntities(cleanedContent, false)
     )
   }
 
