@@ -9,7 +9,6 @@ import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse
 import engine.imageboards.DvachImplicits._
 import engine.imageboards.DvachStructs._
 import engine.utils.{Extracted, RegExpRule}
-import org.jsoup.Jsoup
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
@@ -137,9 +136,11 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
           .map(
             thread => {
               val extracted = this.fetchMarkups(thread.comment)
+              val subject = this.fetchMarkups(thread.subject).content
+
               Thread(
                 id = thread.num,
-                subject = Jsoup.parse(thread.subject).text,
+                subject = subject,
                 content = extracted.content,
                 postsCount = thread.posts_count,
                 timestampt = thread.timestamp,
@@ -188,7 +189,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
       )
       .map(
         posts => {
-          posts
+          val formattedPosts = posts
             .map(
               post => {
                 val extracted: Extracted = this.fetchMarkups(post.comment)
@@ -218,15 +219,17 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                 )
               }
             )
-        }
-      )
-      .map(
-        formattedPosts => {
           val originalPost: Post = formattedPosts.head
+          val subject = posts.head.title
           FetchPostsResponse(
             thread = Thread(
               id = originalPost.id,
-              subject = originalPost.content,
+              subject = subject
+                .map(
+                  s =>
+                    this.fetchMarkups(s).content
+                )
+                .getOrElse(originalPost.content),
               content = originalPost.content,
               postsCount = formattedPosts.length,
               timestampt = originalPost.timestamp,
@@ -246,16 +249,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                     decorations = post.decorations,
                     links = post.links,
                     replies = post.replies,
-                    selfReplies = formattedPosts
-                      .foldLeft(List.empty[String])(
-                        (accumulator, current) => {
-                          val isReply = current.replies.exists(rp => rp.post == post.id)
-                          if (isReply)
-                            accumulator ::: List(current.id)
-                          else
-                            accumulator
-                        }
-                      )
+                    selfReplies = this.fetchSelfReplies(post.id, formattedPosts)
                   )
               )
           )
@@ -308,6 +302,7 @@ object DvachStructs {
   case class DvachPostsResponse
   (
     num: String,
+    title: Option[String],
     comment: String,
     timestamp: Int,
     files: Option[List[DvachFileResponse]]
@@ -337,7 +332,7 @@ object DvachImplicits {
   implicit val dvachThreadsResponseFormat: RootJsonFormat[DvachThreadsResponse] =
     jsonFormat6(DvachThreadsResponse)
   implicit val dvachPostsResponseFormat: RootJsonFormat[DvachPostsResponse] =
-    jsonFormat4(DvachPostsResponse)
+    jsonFormat5(DvachPostsResponse)
   implicit val DvachFormatPostDataFormat: RootJsonFormat[DvachFormatPostData] =
     jsonFormat10(DvachFormatPostData)
 }

@@ -32,9 +32,22 @@ abstract class AbstractImageBoard(implicit executionContext: ExecutionContext, m
 
   def fetchPosts(board: String, thread: Int, since: Int): Future[FetchPostsResponse]
 
+  def formatPost(post: FormatPostRequest): FormatPostResponse
+
   def fetchMarkups(text: String): Extracted = Extractor(text, this.regExps)
 
-  def formatPost(post: FormatPostRequest): FormatPostResponse
+  def fetchSelfReplies(id: String, posts: List[Post]): List[String] = {
+    posts
+      .foldLeft(List.empty[String])(
+        (accumulator, current) => {
+          current.replies.exists(rp => rp.post == id) match {
+            case true => accumulator ::: List(current.id)
+            case false => accumulator
+          }
+        }
+      )
+  }
+
 }
 
 object AbstractImageBoardImplicits extends DefaultJsonProtocol with NullOptions {

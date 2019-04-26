@@ -170,44 +170,42 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
             )
       )
       .map(
-        _
-          .map(
-            post => {
-              val extracted = this.fetchMarkups(post.com.getOrElse(""))
-              Post(
-                id = post.no.toString,
-                content = extracted.content,
-                timestamp = post.time,
-                files = post.filename
-                  .map(
-                    filename =>
-                      List(
-                        File(
-                          name = filename,
-                          full = s"https://i.4cdn.org/$board/${post.tim.get.toString.concat(post.ext.get)}",
-                          thumbnail = s"https://i.4cdn.org/$board/${post.tim.get}.jpg"
+        posts => {
+          val formattedPosts = posts
+            .map(
+              post => {
+                val extracted = this.fetchMarkups(post.com.getOrElse(""))
+                Post(
+                  id = post.no.toString,
+                  content = extracted.content,
+                  timestamp = post.time,
+                  files = post.filename
+                    .map(
+                      filename =>
+                        List(
+                          File(
+                            name = filename,
+                            full = s"https://i.4cdn.org/$board/${post.tim.get.toString.concat(post.ext.get)}",
+                            thumbnail = s"https://i.4cdn.org/$board/${post.tim.get}.jpg"
+                          )
                         )
+                    ).getOrElse(List.empty),
+                  decorations = extracted.decorations,
+                  links = extracted.links,
+                  replies = extracted.replies.map(
+                    reply =>
+                      ReplyMarkup(
+                        start = reply.start,
+                        end = reply.end,
+                        kind = reply.kind,
+                        thread = post.resto.toString,
+                        post = reply.post
                       )
-                  ).getOrElse(List.empty),
-                decorations = extracted.decorations,
-                links = extracted.links,
-                replies = extracted.replies.map(
-                  reply =>
-                    ReplyMarkup(
-                      start = reply.start,
-                      end = reply.end,
-                      kind = reply.kind,
-                      thread = post.resto.toString,
-                      post = reply.post
-                    )
-                ),
-                selfReplies = List.empty
-              )
-            }
-          )
-      )
-      .map(
-        formattedPosts => {
+                  ),
+                  selfReplies = List.empty
+                )
+              }
+            )
           val originalPost: Post = formattedPosts.head
           FetchPostsResponse(
             thread = Thread(
@@ -241,16 +239,7 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
                     decorations = post.decorations,
                     links = post.links,
                     replies = post.replies,
-                    selfReplies = formattedPosts
-                      .foldLeft(List.empty[String])(
-                        (accumulator, current) => {
-                          val isReply = current.replies.exists(rp => rp.post == post.id)
-                          if (isReply)
-                            accumulator ::: List(current.id)
-                          else
-                            accumulator
-                        }
-                      )
+                    selfReplies = this.fetchSelfReplies(post.id, formattedPosts)
                   )
               )
               .drop(since)

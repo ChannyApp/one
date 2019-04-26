@@ -8,13 +8,16 @@ import scala.util.matching.Regex
 
 object Extractor {
   def apply(text: String, regExpRules: List[RegExpRule]): Extracted = {
-    val partiallyCleaned = text
-      .replaceAll("<br>", "\n")
-      .replaceAll("<p>", "\n")
-      .replaceAll("</p>", "\n")
-      .replaceAll("\n+", "\n")
+    val partiallyCleaned = Parser.unescapeEntities(
+      text
+        .replaceAll("<br>", "\n")
+        .replaceAll("<p>", "\n")
+        .replaceAll("</p>", "\n")
+        .replaceAll("\n\n\n+", "\n"),
+      false
+    ).trim
 
-    val allPairs = this.rulesToMatchPairs(partiallyCleaned, regExpRules)
+    val allPairs: Seq[MatchPair] = this.rulesToMatchPairs(partiallyCleaned, regExpRules)
 
     if (allPairs.isEmpty)
       return Extracted(
@@ -24,48 +27,59 @@ object Extractor {
         partiallyCleaned
       )
 
-    val cleanedContent = allPairs
+    val paired = allPairs
+      .flatMap(
+        pair => {
+          List(pair.open, pair.close)
+        }
+      )
+      .sortWith((m1, m2) => m1.start < m2.start)
+
+    val cleanedContent = paired
       .foldLeft((partiallyCleaned, 0))(
         (accumulator, current) => {
           val content = accumulator._1
             .patch(
-              current.open.start - accumulator._2,
+              current.start - accumulator._2,
               "",
-              current.open.length
+              current.length
             )
-            .patch(
-              current.close.start - current.open.length - accumulator._2,
-              "",
-              current.close.length
-            )
-
-          (content, accumulator._2 + current.open.length + current.close.length)
+          (content, accumulator._2 + current.length)
         }
       )._1
 
-    val cleanedPairs = allPairs
-      .foldLeft((List.empty[MatchPair], 0))(
+    val cleanedPairs = paired
+      .foldLeft((List.empty[RegExpMatch], 0))(
         (accumulator, current) => {
-          val updatedMatch = MatchPair(
-            open = RegExpMatch(
-              start = current.open.start - accumulator._2,
-              length = current.open.length,
-              regexMatch = current.open.regexMatch,
-              kind = current.open.kind
-            ),
-            close = RegExpMatch(
-              start = current.close.start - current.open.length - accumulator._2,
-              length = current.close.length,
-              regexMatch = current.close.regexMatch,
-              kind = current.close.kind
-            )
+          val updatedMatch = RegExpMatch(
+            start = current.start - accumulator._2,
+            length = current.length,
+            regexMatch = current.regexMatch,
+            kind = current.kind
           )
           (
             accumulator._1 ::: List(updatedMatch),
-            accumulator._2 + current.open.length + current.close.length
+            accumulator._2 + current.length
           )
         }
       )._1
+      .sortWith(
+        (m1, m2) => {
+          if (m1.kind == m2.kind)
+            m1.start < m2.start
+          else
+            m1.kind < m2.kind
+        })
+      .grouped(2)
+      .map(
+        pair => MatchPair(
+          open = pair.head,
+          close = pair.last
+        )
+      )
+      .toList
+      .sortWith((m1, m2) => m1.open.start < m2.open.start)
+
 
     val extracted = this.extractMarkups(cleanedPairs)
 
@@ -73,7 +87,7 @@ object Extractor {
       decorations = extracted.decorations,
       links = extracted.links,
       replies = extracted.replies,
-      content = Parser.unescapeEntities(cleanedContent, false)
+      content = cleanedContent
     )
   }
 
@@ -109,7 +123,7 @@ object Extractor {
                 )
             )
 
-          val allPairs: List[MatchPair] = openMatches
+          openMatches
             .zip(closeMatches)
             .map(
               pair => MatchPair(
@@ -117,8 +131,6 @@ object Extractor {
                 close = pair._2
               )
             )
-
-          allPairs
         }
       )
       .sortWith((m1, m2) => m1.open.start < m2.open.start)
@@ -137,7 +149,7 @@ object Extractor {
                 ReplyMarkup(
                   start = current.open.start,
                   end = current.close.start,
-                  kind = "reply",
+                  kind = current.open.kind,
                   thread = current.open.regexMatch.group(2),
                   post = current.open.regexMatch.group(3)
                 )
