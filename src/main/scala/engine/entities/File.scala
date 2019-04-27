@@ -1,16 +1,16 @@
 package engine.entities
 
+import spray.json.DefaultJsonProtocol._
 import spray.json._
-import DefaultJsonProtocol._
 
 
-case class File(
-                 name: String,
-                 full: String,
-                 thumbnail: String,
-                 kind: String
-               ) {
-}
+case class File
+(
+  name: String,
+  full: String,
+  thumbnail: String,
+  kind: String
+)
 
 object File {
   def apply(name: String, full: String, thumbnail: String): File = {

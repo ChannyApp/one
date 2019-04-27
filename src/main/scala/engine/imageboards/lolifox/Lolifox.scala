@@ -1,13 +1,14 @@
-package engine.imageboards
+package engine.imageboards.lolifox
 
 import akka.http.scaladsl.HttpExt
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
-import engine.imageboards.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
-import engine.imageboards.LolifoxImplicits._
-import engine.imageboards.LolifoxStructs._
+import engine.imageboards.abstractimageboard.AbstractImageBoard
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.lolifox.LolifoxImplicits._
+import engine.imageboards.lolifox.LolifoxStructs._
 import engine.utils.RegExpRule
 import spray.json.DefaultJsonProtocol._
 import spray.json._
@@ -256,71 +257,4 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
       ).toJson
     )
   }
-}
-
-object LolifoxStructs {
-
-  case class LolifoxBoardsResponse
-  (
-    uri: String,
-    title: String
-  )
-
-  case class LolifoxFileResponse
-  (
-    filename: String,
-    tim: String,
-    ext: String
-  )
-
-  case class LolifoxThreadsResponse
-  (
-    no: Int,
-    sub: Option[String],
-    com: String,
-    time: Int,
-    replies: Int,
-    filename: String,
-    tim: String,
-    ext: String,
-    `extra_files`: Option[List[LolifoxFileResponse]]
-  )
-
-  case class LolifoxPostsResponse
-  (
-    no: Int,
-    com: Option[String],
-    time: Int,
-    filename: Option[String],
-    tim: Option[String],
-    ext: Option[String],
-    `extra_files`: Option[List[LolifoxFileResponse]]
-  )
-
-  case class LolifoxFormatPostData
-  (
-    thread: String,
-    board: String,
-    body: String,
-    `json_response`: Int = 1,
-    post: String = "Ответить"
-  )
-
-}
-
-object LolifoxImplicits {
-  implicit val lolifoxBoardsResponseFormat: RootJsonFormat[LolifoxBoardsResponse] =
-    jsonFormat2(LolifoxBoardsResponse)
-
-  implicit val lolifoxFileResponseFormat: RootJsonFormat[LolifoxFileResponse] =
-    jsonFormat3(LolifoxFileResponse)
-
-  implicit val lolifoxThreadsResponseFormat: RootJsonFormat[LolifoxThreadsResponse] =
-    jsonFormat9(LolifoxThreadsResponse)
-
-  implicit val lolifoxPostsResponseFormat: RootJsonFormat[LolifoxPostsResponse] =
-    jsonFormat7(LolifoxPostsResponse)
-
-  implicit val lolifoxFormatPostDataFormat: RootJsonFormat[LolifoxFormatPostData] =
-    jsonFormat5(LolifoxFormatPostData)
 }

@@ -8,8 +8,8 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import engine.Engine
 import engine.entities.ThreadImplicits._
-import engine.imageboards.AbstractImageBoardImplicits._
-import engine.imageboards.AbstractImageBoardStructs.FormatPostRequest
+import engine.imageboards.abstractimageboard.AbstractImageBoardImplicits._
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.FormatPostRequest
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext}

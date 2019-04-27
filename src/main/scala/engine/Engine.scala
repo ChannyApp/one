@@ -7,8 +7,11 @@ import akka.http.scaladsl.{Http, HttpExt}
 import akka.stream.ActorMaterializer
 import com.github.benmanes.caffeine.cache.Caffeine
 import engine.entities.Thread
-import engine.imageboards.AbstractImageBoardStructs.{FetchPostsResponse, FormatPostRequest, FormatPostResponse}
-import engine.imageboards.{AbstractImageBoard, Dvach, FourChan, Lolifox}
+import engine.imageboards.abstractimageboard.AbstractImageBoard
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.dvach.Dvach
+import engine.imageboards.fourchan.FourChan
+import engine.imageboards.lolifox.Lolifox
 import scalacache._
 import scalacache.caffeine._
 import scalacache.modes.try_._
