@@ -15,7 +15,7 @@ object FourChanStructs {
     replies: Int,
     time: Int,
     filename: Option[String],
-    tim: Option[Int],
+    tim: Option[BigInt],
     ext: Option[String]
   )
 
@@ -26,7 +26,7 @@ object FourChanStructs {
     com: Option[String],
     time: Int,
     filename: Option[String],
-    tim: Option[Int],
+    tim: Option[BigInt],
     ext: Option[String]
   )
 

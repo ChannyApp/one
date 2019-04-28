@@ -51,22 +51,22 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
     ),
     RegExpRule(
       openRegex = raw"""(<span class="unkfunc">)""".r,
-      closeRegex = raw"""<span class="unkfunc">.*(<\/span>)""".r,
+      closeRegex = raw"""<span class="unkfunc">.*?(<\/span>)""".r,
       "quote"
     ),
     RegExpRule(
       openRegex = raw"""(<span class="spoiler">)""".r,
-      closeRegex = raw"""<span class="spoiler">.*(<\/span>)""".r,
+      closeRegex = raw"""<span class="spoiler">.*?(<\/span>)""".r,
       "spoiler"
     ),
     RegExpRule(
       openRegex = raw"""(<span class="s">)""".r,
-      closeRegex = raw"""<span class="s">.*(<\/span>)""".r,
+      closeRegex = raw"""<span class="s">.*?(<\/span>)""".r,
       "strikethrough"
     ),
     RegExpRule(
       openRegex = raw"""(<span class="u">)""".r,
-      closeRegex = raw"""<span class="u">.*(<\/span>)""".r,
+      closeRegex = raw"""<span class="u">.*?(<\/span>)""".r,
       "underline"
     ),
     RegExpRule(

@@ -35,8 +35,8 @@ object Extractor {
       )
       .sortWith((m1, m2) => m1.start < m2.start)
 
-    println("ORIGINAL")
-    paired.foreach(cp => println(cp))
+    //    println("ORIGINAL")
+    //    paired.foreach(cp => println(cp))
 
     val cleanedContent = paired
       .foldLeft((partiallyCleaned, 0))(
@@ -83,10 +83,10 @@ object Extractor {
       .toList
       .sortWith((m1, m2) => m1.open.start < m2.open.start)
 
-    println("CLEANED")
-    cleanedPairs.foreach(cp => println(cp))
-
-    println("==========")
+    //    println("CLEANED")
+    //    cleanedPairs.foreach(cp => println(cp))
+    //
+    //    println("==========")
 
     val extracted = try {
       this.extractMarkups(cleanedPairs)

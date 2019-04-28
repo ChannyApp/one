@@ -121,7 +121,7 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
                   File(
                     name = thread.filename,
                     full = s"https://lolifox.org/$board/src/${thread.tim.concat(thread.ext)}",
-                    thumbnail = "https://www.meme-arsenal.com/memes/0bcbd4fc3d35a9a4abe01ce8a3b21198.jpg"
+                    thumbnail = s"https://lolifox.org/$board/src/${thread.tim.concat(thread.ext)}"
                   )
                 ) ::: thread.`extra_files`
                   .map(
@@ -131,7 +131,7 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
                           file => File(
                             name = file.filename,
                             full = s"https://lolifox.org/$board/src/${file.tim.concat(file.ext)}",
-                            thumbnail = "https://www.meme-arsenal.com/memes/0bcbd4fc3d35a9a4abe01ce8a3b21198.jpg"
+                            thumbnail = s"https://lolifox.org/$board/src/${file.tim.concat(file.ext)}"
                           )
                         )
                   ).getOrElse(List.empty),
@@ -182,7 +182,7 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
                         File(
                           name = filename,
                           full = s"https://lolifox.org/$board/src/${post.tim.get.concat(post.ext.get)}",
-                          thumbnail = "https://www.meme-arsenal.com/memes/0bcbd4fc3d35a9a4abe01ce8a3b21198.jpg"
+                          thumbnail = s"https://lolifox.org/$board/src/${post.tim.get.concat(post.ext.get)}"
                         )
                       ) ::: post.`extra_files`
                         .map(
@@ -192,7 +192,7 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
                                 file => File(
                                   name = file.filename,
                                   full = s"https://lolifox.org/$board/src/${file.tim.concat(file.ext)}",
-                                  thumbnail = "https://www.meme-arsenal.com/memes/0bcbd4fc3d35a9a4abe01ce8a3b21198.jpg"
+                                  thumbnail = s"https://lolifox.org/$board/src/${file.tim.concat(file.ext)}"
                                 )
                               )
                         ).getOrElse(List.empty)
