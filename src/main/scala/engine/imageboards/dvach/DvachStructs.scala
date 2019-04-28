@@ -29,7 +29,7 @@ object DvachStructs {
   case class DvachPostsResponse
   (
     num: String,
-    title: Option[String],
+    subject: Option[String],
     comment: String,
     timestamp: Int,
     files: Option[List[DvachFileResponse]]

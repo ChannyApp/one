@@ -220,7 +220,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
               }
             )
           val originalPost: Post = formattedPosts.head
-          val subject = posts.head.title
+          val subject = posts.head.subject
           FetchPostsResponse(
             thread = Thread(
               id = originalPost.id,
