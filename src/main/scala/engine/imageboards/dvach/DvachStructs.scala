@@ -21,7 +21,7 @@ object DvachStructs {
     num: String,
     subject: String,
     comment: String,
-    posts_count: Int,
+    `posts_count`: Int,
     timestamp: Int,
     files: Option[List[DvachFileResponse]]
   )

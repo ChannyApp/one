@@ -115,7 +115,7 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
                   )
                   .getOrElse(extracted.content),
                 content = extracted.content,
-                postsCount = thread.replies,
+                postsCount = thread.replies + 1,
                 timestampt = thread.time,
                 files = List(
                   File(
@@ -211,7 +211,7 @@ class Lolifox(implicit executionContext: ExecutionContext, materializer: ActorMa
               id = originalPost.id,
               subject = originalPost.content,
               content = originalPost.content,
-              postsCount = formattedPosts.length,
+              postsCount = formattedPosts.length + 1,
               timestampt = originalPost.timestamp,
               files = originalPost.files,
               decorations = originalPost.decorations,

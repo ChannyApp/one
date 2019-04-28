@@ -142,7 +142,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                 id = thread.num,
                 subject = subject,
                 content = extracted.content,
-                postsCount = thread.posts_count,
+                postsCount = thread.`posts_count` + 1,
                 timestampt = thread.timestamp,
                 files = thread
                   .files
@@ -231,7 +231,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
                 )
                 .getOrElse(originalPost.content),
               content = originalPost.content,
-              postsCount = formattedPosts.length,
+              postsCount = formattedPosts.length + 1,
               timestampt = originalPost.timestamp,
               files = originalPost.files,
               decorations = originalPost.decorations,
