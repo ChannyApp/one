@@ -70,8 +70,8 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
       "underline"
     ),
     RegExpRule(
-      openRegex = raw"""(<a.*class="post-reply-link".*data-thread="(.*)".*data-num="(.*)">)""".r,
-      closeRegex = raw"""<a.*class="post-reply-link".*>.*(<\/a>)""".r,
+      openRegex = raw"""(<a href="\/[\S]+\/.*" class="post-reply-link" data-thread="([\d]+)" data-num="([\d]+)">)""".r,
+      closeRegex = raw"""<a href="\/[\S]+\/.*" class="post-reply-link" data-thread="[\d]+" data-num="[\d]+">.*(<\/a>)""".r,
       "reply"
     ),
 

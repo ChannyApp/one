@@ -35,6 +35,9 @@ object Extractor {
       )
       .sortWith((m1, m2) => m1.start < m2.start)
 
+    println("ORIGINAL")
+    paired.foreach(cp => println(cp))
+
     val cleanedContent = paired
       .foldLeft((partiallyCleaned, 0))(
         (accumulator, current) => {
@@ -80,8 +83,17 @@ object Extractor {
       .toList
       .sortWith((m1, m2) => m1.open.start < m2.open.start)
 
+    println("CLEANED")
+    cleanedPairs.foreach(cp => println(cp))
 
-    val extracted = this.extractMarkups(cleanedPairs)
+    println("==========")
+
+    val extracted = try {
+      this.extractMarkups(cleanedPairs)
+    } catch {
+      case _: Throwable => Extracted()
+    }
+
 
     Extracted(
       decorations = extracted.decorations,
@@ -139,7 +151,6 @@ object Extractor {
   def extractMarkups(pairs: List[MatchPair]): Extracted = {
     pairs.foldLeft(Extracted())(
       (accumulator, current) => {
-
         current.open.kind match {
           case "reply" =>
             Extracted(
