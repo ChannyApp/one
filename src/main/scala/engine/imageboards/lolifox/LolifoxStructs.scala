@@ -22,9 +22,9 @@ object LolifoxStructs {
     com: String,
     time: Int,
     replies: Int,
-    filename: String,
-    tim: String,
-    ext: String,
+    filename: Option[String],
+    tim: Option[String],
+    ext: Option[String],
     `extra_files`: Option[List[LolifoxFileResponse]]
   )
 

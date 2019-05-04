@@ -1,14 +1,14 @@
 package engine.imageboards.abstractimageboard
 
-import akka.http.scaladsl.HttpExt
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.model.headers.Cookie
+import client.Client
 import engine.entities.{Board, Post, Thread}
-import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.utils.{Extracted, Extractor, RegExpRule}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-abstract class AbstractImageBoard(implicit executionContext: ExecutionContext, materializer: ActorMaterializer, client: HttpExt) {
+abstract class AbstractImageBoard(implicit client: Client) {
   val id: Int
   val name: String
   val baseURL: String
@@ -17,19 +17,22 @@ abstract class AbstractImageBoard(implicit executionContext: ExecutionContext, m
   val logo: String
   val highlight: String
   val clipboardRegExps: List[String]
-
   val boards: List[Board]
   val regExps: List[RegExpRule]
 
   def fetchBoards(): Future[List[Board]]
 
-  def fetchThreads(board: String): Future[List[Thread]]
+  def fetchThreads(board: String)
+                  (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]]
 
-  def fetchPosts(board: String, thread: Int, since: Int): Future[FetchPostsResponse]
+  def fetchPosts(board: String, thread: Int, since: Int)
+                (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]]
 
   def formatPost(post: FormatPostRequest): FormatPostResponse
 
-  def fetchMarkups(text: String): Extracted = Extractor(text, this.regExps)
+  def fetchMarkups(text: String): Extracted = {
+    Extractor(text, this.regExps)
+  }
 
   def fetchSelfReplies(id: String, posts: List[Post]): List[String] = {
     posts

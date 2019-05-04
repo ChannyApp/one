@@ -1,22 +1,21 @@
 package engine.imageboards.fourchan
 
-import akka.http.scaladsl.HttpExt
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.model.headers.Cookie
+import client.Client
 import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
-import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.imageboards.fourchan.FourChanImplicits._
 import engine.imageboards.fourchan.FourChanStructs.{FourChanBoardsResponse, FourChanFormatPostData, FourChanPostsResponse, FourChanThreadsResponse}
 import engine.utils.RegExpRule
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, Future}
 
-class FourChan(implicit executionContext: ExecutionContext, materializer: ActorMaterializer, client: HttpExt) extends AbstractImageBoard {
+class FourChan(implicit client: Client) extends AbstractImageBoard {
   override val id: Int = 1
   override val name: String = "4chan"
   override val baseURL: String = "https://a.4cdn.org"
@@ -54,27 +53,18 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
   println(s"[$name] Ready")
 
   override def fetchBoards(): Future[List[Board]] = {
-    val response: Future[HttpResponse] = client
-      .singleRequest(
-        HttpRequest(
-          uri = s"${this.baseURL}/boards.json"
-        )
+    val response = this
+      .client
+      .GET(s"${this.baseURL}/boards.json")
+      .map(
+        _
+          .asJsObject
+          .getFields("boards")
+          .head
+          .convertTo[List[FourChanBoardsResponse]]
       )
 
     response
-      .flatMap(
-        r =>
-          Unmarshal(r)
-            .to[String]
-            .map(
-              _
-                .parseJson
-                .asJsObject
-                .getFields("boards")
-                .head
-                .convertTo[List[FourChanBoardsResponse]]
-            )
-      )
       .map(
         _
           .map(
@@ -87,88 +77,74 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
       )
   }
 
-  override def fetchThreads(board: String): Future[List[Thread]] = {
-    val response: Future[HttpResponse] = client
-      .singleRequest(
-        HttpRequest(
-          uri = s"${this.baseURL}/$board/catalog.json"
-        )
-      )
-
-    response
-      .flatMap(
-        r =>
-          Unmarshal(r)
-            .to[String]
-            .map(
-              _
-                .parseJson
-                .convertTo[JsArray]
-                .elements
-                .toList
-                .flatMap(
-                  page => {
-                    page
-                      .asJsObject
-                      .getFields("threads")
-                      .head
-                      .convertTo[List[FourChanThreadsResponse]]
-                  }
-                )
-            )
-            .map(
-              _
-                .map(
-                  thread => {
-                    val extracted = this.fetchMarkups(thread.com.getOrElse(""))
-                    Thread(
-                      id = thread.no.toString,
-                      subject = extracted.content,
-                      content = extracted.content,
-                      postsCount = thread.replies + 1,
-                      timestampt = thread.time,
-                      files = thread.filename
-                        .map(
-                          filename => List(
+  override def fetchThreads(board: String)
+                           (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] = {
+    this
+      .client
+      .GET(s"${this.baseURL}/$board/catalog.json")
+      .map(
+        response =>
+          Right(
+            response
+              .convertTo[JsArray]
+              .elements
+              .toList
+              .flatMap(
+                page => {
+                  page
+                    .asJsObject
+                    .getFields("threads")
+                    .head
+                    .convertTo[List[FourChanThreadsResponse]]
+                }
+              )
+              .map(
+                thread => {
+                  val extracted = this.fetchMarkups(thread.com.getOrElse(""))
+                  Thread(
+                    id = thread.no.toString,
+                    subject = extracted.content,
+                    content = extracted.content,
+                    postsCount = thread.replies + 1,
+                    timestampt = thread.time,
+                    files = thread.filename
+                      .map(
+                        filename =>
+                          List(
                             File(
                               name = filename,
                               full = s"https://i.4cdn.org/$board/${thread.tim.get.toString.concat(thread.ext.get)}",
                               thumbnail = s"https://i.4cdn.org/$board/${thread.tim.get}.jpg"
                             )
                           )
-                        ).getOrElse(List.empty),
-                      decorations = extracted.decorations,
-                      links = extracted.links,
-                      replies = extracted.replies,
-                    )
-                  }
-                )
-            )
+                      ).getOrElse(List.empty),
+                    decorations = extracted.decorations,
+                    links = extracted.links,
+                    replies = extracted.replies,
+                  )
+                }
+              )
+          )
       )
-
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          Left(ErrorResponse("Board unavailable"))
+      }
   }
 
-  override def fetchPosts(board: String, thread: Int, since: Int): Future[FetchPostsResponse] = {
-    val response: Future[HttpResponse] = client
-      .singleRequest(
-        HttpRequest(
-          uri = s"${this.baseURL}/$board/thread/$thread.json"
-        )
-      )
-
-    response
-      .flatMap(
-        r =>
-          Unmarshal(r)
-            .to[String]
-            .map(
-              _
-                .parseJson
-                .asJsObject
-                .getFields("posts")
-                .head
-                .convertTo[List[FourChanPostsResponse]]
-            )
+  override def fetchPosts(board: String, thread: Int, since: Int)
+                         (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
+    this
+      .client
+      .GET(s"${this.baseURL}/$board/thread/$thread.json")
+      .map(
+        response =>
+          response
+            .asJsObject
+            .getFields("posts")
+            .head
+            .convertTo[List[FourChanPostsResponse]]
       )
       .map(
         posts => {
@@ -208,45 +184,52 @@ class FourChan(implicit executionContext: ExecutionContext, materializer: ActorM
               }
             )
           val originalPost: Post = formattedPosts.head
-          FetchPostsResponse(
-            thread = Thread(
-              id = originalPost.id,
-              subject = originalPost.content,
-              content = originalPost.content,
-              postsCount = formattedPosts.length + 1,
-              timestampt = originalPost.timestamp,
-              files = originalPost.files,
-              decorations = originalPost.decorations,
-              links = originalPost.links,
-              replies = originalPost.replies.map(
-                reply =>
-                  ReplyMarkup(
-                    start = reply.start,
-                    end = reply.end,
-                    kind = reply.kind,
-                    thread = originalPost.id,
-                    post = reply.post
-                  )
+          Right(
+            FetchPostsResponse(
+              thread = Thread(
+                id = originalPost.id,
+                subject = originalPost.content,
+                content = originalPost.content,
+                postsCount = formattedPosts.length + 1,
+                timestampt = originalPost.timestamp,
+                files = originalPost.files,
+                decorations = originalPost.decorations,
+                links = originalPost.links,
+                replies = originalPost.replies.map(
+                  reply =>
+                    ReplyMarkup(
+                      start = reply.start,
+                      end = reply.end,
+                      kind = reply.kind,
+                      thread = originalPost.id,
+                      post = reply.post
+                    )
+                ),
               ),
-            ),
-            posts = formattedPosts
-              .map(
-                post =>
-                  Post(
-                    id = post.id,
-                    content = post.content,
-                    timestamp = post.timestamp,
-                    files = post.files,
-                    decorations = post.decorations,
-                    links = post.links,
-                    replies = post.replies,
-                    selfReplies = this.fetchSelfReplies(post.id, formattedPosts)
-                  )
-              )
-              .drop(since)
+              posts = formattedPosts
+                .map(
+                  post =>
+                    Post(
+                      id = post.id,
+                      content = post.content,
+                      timestamp = post.timestamp,
+                      files = post.files,
+                      decorations = post.decorations,
+                      links = post.links,
+                      replies = post.replies,
+                      selfReplies = this.fetchSelfReplies(post.id, formattedPosts)
+                    )
+                )
+                .drop(since)
+            )
           )
         }
       )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          Left(ErrorResponse("Thread unavailable"))
+      }
   }
 
 

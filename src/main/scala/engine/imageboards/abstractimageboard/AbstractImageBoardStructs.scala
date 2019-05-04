@@ -32,4 +32,9 @@ object AbstractImageBoardStructs {
     data: JsValue
   )
 
+  case class ErrorResponse
+  (
+    error: String
+  )
+
 }

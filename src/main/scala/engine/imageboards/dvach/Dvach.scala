@@ -1,22 +1,21 @@
 package engine.imageboards.dvach
 
-import akka.http.scaladsl.HttpExt
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.model.headers.Cookie
+import client.Client
 import engine.entities.{Board, File, Post, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
-import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.imageboards.dvach.DvachImplicits._
 import engine.imageboards.dvach.DvachStructs._
 import engine.utils.{Extracted, RegExpRule}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, Future}
 
-class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMaterializer, client: HttpExt) extends AbstractImageBoard {
+class Dvach(implicit client: Client) extends AbstractImageBoard {
   override val id: Int = 0
   override val name: String = "Двач"
   override val baseURL: String = "https://2ch.hk"
@@ -30,9 +29,7 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
   override val logo: String = "https://2ch.hk/newtest/resources/images/dvlogo.png"
   override val highlight: String = "#F26722"
   override val clipboardRegExps: List[String] = List("/салямчик двачик/")
-
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
-
   override val regExps: List[RegExpRule] = List(
     RegExpRule(
       openRegex = raw"""(<strong>)""".r,
@@ -80,26 +77,12 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
   println(s"[$name] Ready")
 
   override def fetchBoards(): Future[List[Board]] = {
-    val response: Future[HttpResponse] = client
-      .singleRequest(
-        HttpRequest(
-          uri = s"${this.baseURL}/makaba/mobile.fcgi?task=get_boards"
-        )
-      )
-
-    response
-      .flatMap(
-        r =>
-          Unmarshal(r)
-            .to[String]
-            .map(
-              _
-                .parseJson
-                .convertTo[Map[String, List[DvachBoardsResponse]]]
-            )
-      )
+    this
+      .client
+      .GET(s"${this.baseURL}/makaba/mobile.fcgi?task=get_boards")
       .map(
         _
+          .convertTo[Map[String, List[DvachBoardsResponse]]]
           .values
           .flatten
           .map(
@@ -110,83 +93,65 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
       )
   }
 
-  override def fetchThreads(board: String): Future[List[Thread]] = {
-    val response: Future[HttpResponse] = client
-      .singleRequest(
-        HttpRequest(
-          uri = s"${this.baseURL}/$board/catalog.json"
-        )
-      )
-
-    response
-      .flatMap(
-        r =>
-          Unmarshal(r)
-            .to[String]
-            .map(
-              _
-                .parseJson
-                .asJsObject
-                .getFields("threads")
-                .head
-                .convertTo[List[DvachThreadsResponse]]
-            )
-      )
+  override def fetchThreads(board: String)
+                           (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] = {
+    this
+      .client
+      .GET(url = s"${this.baseURL}/$board/catalog.json")
       .map(
-        _
-          .map(
-            thread => {
-              val extracted = this.fetchMarkups(thread.comment)
-              val subject = this.fetchMarkups(thread.subject).content
-              Thread(
-                id = thread.num,
-                subject = subject,
-                content = extracted.content,
-                postsCount = thread.`posts_count` + 1,
-                timestampt = thread.timestamp,
-                files = thread
-                  .files
-                  .map(
-                    files =>
-                      files
-                        .map(
-                          file =>
-                            File(
-                              name = file.fullname.getOrElse(file.displayname),
-                              full = this.baseURL.concat(file.path),
-                              thumbnail = this.baseURL.concat(file.thumbnail)
+        response =>
+          Right(
+            response
+              .asJsObject
+              .getFields("threads")
+              .head
+              .convertTo[List[DvachThreadsResponse]]
+              .map(
+                thread => {
+                  val extracted = this.fetchMarkups(thread.comment)
+                  val subject = this.fetchMarkups(thread.subject).content
+                  Thread(
+                    id = thread.num,
+                    subject = subject,
+                    content = extracted.content,
+                    postsCount = thread.`posts_count` + 1,
+                    timestampt = thread.timestamp,
+                    files = thread
+                      .files
+                      .map(
+                        files =>
+                          files
+                            .map(
+                              file =>
+                                File(
+                                  name = file.fullname.getOrElse(file.displayname),
+                                  full = this.baseURL.concat(file.path),
+                                  thumbnail = this.baseURL.concat(file.thumbnail)
+                                )
                             )
-                        )
+                      )
+                      .getOrElse(List.empty),
+                    decorations = extracted.decorations,
+                    links = extracted.links,
+                    replies = extracted.replies
                   )
-                  .getOrElse(List.empty),
-                decorations = extracted.decorations,
-                links = extracted.links,
-                replies = extracted.replies
+                }
               )
-            }
           )
       )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          Left(ErrorResponse("Доска недоступна"))
+      }
   }
 
-  override def fetchPosts(board: String, thread: Int, since: Int): Future[FetchPostsResponse] = {
-    val response: Future[HttpResponse] = client
-      .singleRequest(
-        HttpRequest(
-          uri = s"${this.baseURL}/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}"
-        )
-      )
-
-    response
-      .flatMap(
-        r =>
-          Unmarshal(r)
-            .to[String]
-            .map(
-              _
-                .parseJson
-                .convertTo[List[DvachPostsResponse]]
-            )
-      )
+  override def fetchPosts(board: String, thread: Int, since: Int)
+                         (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
+    this
+      .client
+      .GET(s"${this.baseURL}/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}")
+      .map(_.convertTo[List[DvachPostsResponse]])
       .map(
         posts => {
           val formattedPosts = posts
@@ -221,40 +186,47 @@ class Dvach(implicit executionContext: ExecutionContext, materializer: ActorMate
             )
           val originalPost: Post = formattedPosts.head
           val subject = posts.head.subject
-          FetchPostsResponse(
-            thread = Thread(
-              id = originalPost.id,
-              subject = subject
-                .map(
-                  s =>
-                    this.fetchMarkups(s).content
-                )
-                .getOrElse(originalPost.content),
-              content = originalPost.content,
-              postsCount = formattedPosts.length + 1,
-              timestampt = originalPost.timestamp,
-              files = originalPost.files,
-              decorations = originalPost.decorations,
-              links = originalPost.links,
-              replies = originalPost.replies,
-            ),
-            posts = formattedPosts
-              .map(
-                post =>
-                  Post(
-                    id = post.id,
-                    content = post.content,
-                    timestamp = post.timestamp,
-                    files = post.files,
-                    decorations = post.decorations,
-                    links = post.links,
-                    replies = post.replies,
-                    selfReplies = this.fetchSelfReplies(post.id, formattedPosts)
+          Right(
+            FetchPostsResponse(
+              thread = Thread(
+                id = originalPost.id,
+                subject = subject
+                  .map(
+                    s =>
+                      this.fetchMarkups(s).content
                   )
-              )
+                  .getOrElse(originalPost.content),
+                content = originalPost.content,
+                postsCount = formattedPosts.length + 1,
+                timestampt = originalPost.timestamp,
+                files = originalPost.files,
+                decorations = originalPost.decorations,
+                links = originalPost.links,
+                replies = originalPost.replies,
+              ),
+              posts = formattedPosts
+                .map(
+                  post =>
+                    Post(
+                      id = post.id,
+                      content = post.content,
+                      timestamp = post.timestamp,
+                      files = post.files,
+                      decorations = post.decorations,
+                      links = post.links,
+                      replies = post.replies,
+                      selfReplies = this.fetchSelfReplies(post.id, formattedPosts)
+                    )
+                )
+            )
           )
         }
       )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          Left(ErrorResponse("Тред недоступен"))
+      }
   }
 
   override def formatPost(post: FormatPostRequest): FormatPostResponse = {

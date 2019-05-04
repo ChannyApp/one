@@ -3,7 +3,7 @@ package engine.imageboards.abstractimageboard
 import engine.entities.BoardImplicits._
 import engine.entities.PostImplicits._
 import engine.entities.ThreadImplicits._
-import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{Captcha, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import spray.json._
 
 
@@ -35,4 +35,6 @@ object AbstractImageBoardImplicits extends DefaultJsonProtocol with NullOptions 
     jsonFormat2(Captcha)
   implicit val formatPostRequestFormat: RootJsonFormat[FormatPostRequest] =
     jsonFormat5(FormatPostRequest)
+  implicit val errorResponseFormat: RootJsonFormat[ErrorResponse] =
+    jsonFormat1(ErrorResponse)
 }
