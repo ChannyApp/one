@@ -21,23 +21,23 @@ import scala.util.{Failure, Success}
 class Server(engine: Engine)
             (implicit actorSystem: ActorSystem, materializer: ActorMaterializer) {
   val route: Route =
-    extractRequest {
-      request => {
-        implicit val cookies: List[Cookie] = request
-          .cookies
-          .map(
-            cookie =>
-              Cookie(
-                name = cookie.name,
-                value = cookie.value
-              )
-          ).toList
+    get {
+      pathEndOrSingleSlash {
+        complete(engine.fetchImageBoards())
+      } ~
+        ignoreTrailingSlash {
+          extractRequest {
+            request => {
+              implicit val cookies: List[Cookie] = request
+                .cookies
+                .map(
+                  cookie =>
+                    Cookie(
+                      name = cookie.name,
+                      value = cookie.value
+                    )
+                ).toList
 
-        get {
-          pathEndOrSingleSlash {
-            complete(engine.fetchImageBoards())
-          } ~
-            ignoreTrailingSlash {
               path(IntNumber / Segment) {
                 case (imageBoardID, boardID) =>
                   val response = engine.fetchImageBoardThreads(imageBoardID, boardID)
@@ -70,11 +70,9 @@ class Server(engine: Engine)
                     }
                 }
             }
-        }
-      }
-    } ~
-      post {
-        ignoreTrailingSlash {
+          }
+        } ~
+        post {
           path("format" / IntNumber) {
             imageBoardID => {
               entity(as[FormatPostRequest]) {
@@ -84,7 +82,7 @@ class Server(engine: Engine)
             }
           }
         }
-      }
+    }
 
   implicit val executionContext: ExecutionContextExecutor = this.actorSystem.dispatcher
 
