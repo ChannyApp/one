@@ -51,12 +51,6 @@ class Client(
       request = request
     )
 
-    response.flatMap(
-      r => {
-        val body = Unmarshal(r).to[String]
-        r.discardEntityBytes()
-        body.map(_.parseJson)
-      }
-    )
+    response.flatMap(r => Unmarshal(r).to[String].map(_.parseJson))
   }
 }

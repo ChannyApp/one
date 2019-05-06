@@ -1,6 +1,6 @@
 package engine
 
-import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.model.headers.Cookie
 import client.Client
@@ -17,7 +17,6 @@ import scalacache.modes.try_._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Try
 
 
 class Engine(implicit client: Client) {
@@ -27,18 +26,18 @@ class Engine(implicit client: Client) {
     new Lolifox(),
   )
 
-  private implicit val threadsCache: Cache[List[Thread]] = CaffeineCache(
+  private implicit val threadsCache: Cache[Future[Either[ErrorResponse, List[Thread]]]] = CaffeineCache(
     Caffeine
       .newBuilder()
-      .expireAfterWrite(Duration.ofSeconds(3))
-      .build[String, Entry[List[Thread]]]
+      .expireAfterWrite(3, TimeUnit.SECONDS)
+      .build[String, Entry[Future[Either[ErrorResponse, List[Thread]]]]]
   )
 
-  private implicit val postsCache: Cache[FetchPostsResponse] = CaffeineCache(
+  private implicit val postsCache: Cache[Future[Either[ErrorResponse, FetchPostsResponse]]] = CaffeineCache(
     Caffeine
       .newBuilder()
-      .expireAfterWrite(Duration.ofSeconds(10))
-      .build[String, Entry[FetchPostsResponse]]
+      .expireAfterWrite(10, TimeUnit.SECONDS)
+      .build[String, Entry[Future[Either[ErrorResponse, FetchPostsResponse]]]]
   )
 
   private def LOG(message: String): Unit = {
@@ -57,48 +56,27 @@ class Engine(implicit client: Client) {
   }
 
   def fetchImageBoardThreads(id: Int, board: String)
-                            (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] =
-    synchronized {
-      this.getImageBoardByID(id) match {
-        case Right(imageboard) =>
-          val key = id + board
-          val posts: Try[Option[List[Thread]]] = get(key)
-          posts.get match {
-            case Some(cached) =>
-              this.LOG(s"Cache HIT on ${imageboard.name} | $board")
-              Future(Right(cached))
-            case None =>
-              this.LOG(s"Cache MISS on ${imageboard.name} | $board")
-              imageboard.fetchThreads(board).map {
-                case Right(value) =>
-                  put(key)(value)
-                  Right(value)
-                case Left(value) => Left(value)
-              }
-          }
-        case Left(error) => Future(Left(error))
-      }
+                            (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] = {
+    this.getImageBoardByID(id) match {
+      case Right(imageboard) =>
+        val key = id + board
+        caching(key)(ttl = None) {
+          this.LOG(s"Cache MISS on ${imageboard.name} | $board")
+          imageboard.fetchThreads(board)
+        }.get
+      case Left(error) => Future(Left(error))
     }
+  }
 
   def fetchImageBoardPosts(id: Int, board: String, thread: Int, since: Int = 0)
                           (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this.getImageBoardByID(id) match {
       case Right(imageboard) =>
         val key = id + board + thread + since
-        val posts: Try[Option[FetchPostsResponse]] = get(key)
-        posts.get match {
-          case Some(cached) =>
-            this.LOG(s"Cache HIT on ${imageboard.name} | $board | $thread")
-            Future(Right(cached))
-          case None =>
-            this.LOG(s"Cache MISS on ${imageboard.name} | $board | $thread")
-            imageboard.fetchPosts(board, thread, since).map {
-              case Right(value) =>
-                put(key)(value)
-                Right(value)
-              case Left(value) => Left(value)
-            }
-        }
+        caching(key)(ttl = None) {
+          this.LOG(s"Cache MISS on ${imageboard.name} | $board | $thread")
+          imageboard.fetchPosts(board, thread, since)
+        }.get
       case Left(error) => Future(Left(error))
     }
   }

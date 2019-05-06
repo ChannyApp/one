@@ -79,18 +79,24 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override def fetchBoards(): Future[List[Board]] = {
     this
       .client
-      .GET(s"${this.baseURL}/makaba/mobile.fcgi?task=get_boards")
+      .GET(s"${this.baseURL}/boards.json")
       .map(
         _
-          .convertTo[Map[String, List[DvachBoardsResponse]]]
-          .values
-          .flatten
+          .asJsObject
+          .getFields("boards")
+          .head
+          .convertTo[List[DvachBoardsResponse]]
           .map(
             board =>
               Board(id = board.id, name = board.name)
           )
           .toList
       )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          List.empty
+      }
   }
 
   override def fetchThreads(board: String)

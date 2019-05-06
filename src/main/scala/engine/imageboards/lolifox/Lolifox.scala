@@ -52,6 +52,11 @@ class Lolifox(implicit client: Client) extends AbstractImageBoard {
               )
           )
       )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          List.empty
+      }
   }
 
   override def fetchThreads(board: String)

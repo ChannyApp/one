@@ -53,7 +53,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
   println(s"[$name] Ready")
 
   override def fetchBoards(): Future[List[Board]] = {
-    val response = this
+    this
       .client
       .GET(s"${this.baseURL}/boards.json")
       .map(
@@ -62,11 +62,6 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
           .getFields("boards")
           .head
           .convertTo[List[FourChanBoardsResponse]]
-      )
-
-    response
-      .map(
-        _
           .map(
             board =>
               Board(
@@ -75,6 +70,11 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
               )
           )
       )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          List.empty
+      }
   }
 
   override def fetchThreads(board: String)
