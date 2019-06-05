@@ -43,8 +43,7 @@ object DvachStructs {
     thread: String,
     subject: String,
     comment: String,
-    images: List[String],
-    `captcha_type`: String = "recaptcha",
+    `captcha_type`: String = "invisible_recaptcha",
     `captcha-key`: String,
     `g-recaptcha-response`: Option[String]
   )

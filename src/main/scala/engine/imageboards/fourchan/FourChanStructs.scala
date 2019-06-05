@@ -36,7 +36,6 @@ object FourChanStructs {
     mode: String = "regist",
     resto: String,
     com: String,
-    images: List[String] = List("upfile"),
     `g-recaptcha-response`: Option[String]
   )
 

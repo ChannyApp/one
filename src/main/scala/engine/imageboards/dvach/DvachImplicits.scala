@@ -14,5 +14,5 @@ object DvachImplicits {
   implicit val dvachPostsResponseFormat: RootJsonFormat[DvachPostsResponse] =
     jsonFormat5(DvachPostsResponse)
   implicit val DvachFormatPostDataFormat: RootJsonFormat[DvachFormatPostData] =
-    jsonFormat10(DvachFormatPostData)
+    jsonFormat9(DvachFormatPostData)
 }

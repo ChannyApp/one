@@ -13,6 +13,7 @@ object AbstractImageBoardStructs {
 
   case class Captcha
   (
+    url: String,
     kind: String,
     key: String
   )
@@ -20,7 +21,7 @@ object AbstractImageBoardStructs {
   case class FormatPostRequest
   (
     board: String,
-    thread: String,
+    thread: Option[String],
     text: String,
     images: Int,
     captcha: Option[String]
@@ -29,6 +30,7 @@ object AbstractImageBoardStructs {
   case class FormatPostResponse
   (
     url: String,
+    images: List[String],
     data: JsValue
   )
 

@@ -21,6 +21,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
   override val baseURL: String = "https://a.4cdn.org"
   override val captcha: Option[Captcha] = Some(
     Captcha(
+      url = "https://boards.4chan.org",
       kind = "reCAPTCHA v2",
       key = "6Ldp2bsSAAAAAAJ5uyx_lx34lJeEpTLVkP5k04qc"
     )
@@ -236,8 +237,9 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
   override def formatPost(post: FormatPostRequest): FormatPostResponse = {
     FormatPostResponse(
       url = s"https://sys.4chan.org/${post.board}/post",
+      images = List("upfile"),
       data = FourChanFormatPostData(
-        resto = post.thread,
+        resto = post.thread.orNull,
         com = post.text,
         `g-recaptcha-response` = post.captcha
       ).toJson

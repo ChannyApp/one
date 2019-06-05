@@ -10,7 +10,6 @@ import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{ErrorResponse, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
 import engine.imageboards.dvach.Dvach
 import engine.imageboards.fourchan.FourChan
-import engine.imageboards.lolifox.Lolifox
 import scalacache._
 import scalacache.caffeine._
 import scalacache.modes.try_._
@@ -23,7 +22,6 @@ class Engine(implicit client: Client) {
   private val imageBoards: List[AbstractImageBoard] = List(
     new Dvach(),
     new FourChan(),
-    new Lolifox(),
   )
 
   private implicit val threadsCache: Cache[Future[Either[ErrorResponse, List[Thread]]]] = CaffeineCache(

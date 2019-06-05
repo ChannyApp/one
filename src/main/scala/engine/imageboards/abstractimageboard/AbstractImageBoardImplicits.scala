@@ -28,11 +28,11 @@ object AbstractImageBoardImplicits extends DefaultJsonProtocol with NullOptions 
   }
 
   implicit val formatPostResponseFormat: RootJsonFormat[FormatPostResponse] =
-    jsonFormat2(FormatPostResponse)
+    jsonFormat3(FormatPostResponse)
   implicit val fetchPostsResponseFormat: RootJsonFormat[FetchPostsResponse] =
     jsonFormat2(FetchPostsResponse)
   implicit val captchaFormat: RootJsonFormat[Captcha] =
-    jsonFormat2(Captcha)
+    jsonFormat3(Captcha)
   implicit val formatPostRequestFormat: RootJsonFormat[FormatPostRequest] =
     jsonFormat5(FormatPostRequest)
   implicit val errorResponseFormat: RootJsonFormat[ErrorResponse] =

@@ -12,5 +12,5 @@ object FourChanImplicits {
   implicit val fourChanPostsResponseFormat: RootJsonFormat[FourChanPostsResponse] =
     jsonFormat7(FourChanPostsResponse)
   implicit val fourChanFormatPostDataFormat: RootJsonFormat[FourChanFormatPostData] =
-    jsonFormat6(FourChanFormatPostData)
+    jsonFormat5(FourChanFormatPostData)
 }

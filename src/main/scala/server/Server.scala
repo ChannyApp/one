@@ -71,18 +71,25 @@ class Server(engine: Engine)
                 }
             }
           }
-        } ~
-        post {
-          path("format" / IntNumber) {
-            imageBoardID => {
-              entity(as[FormatPostRequest]) {
-                postRequest =>
-                  complete(engine.formatImageBoardPost(imageBoardID, postRequest))
-              }
+        }
+    } ~
+      post {
+        path("format" / IntNumber) {
+          imageBoardID => {
+            entity(as[FormatPostRequest]) {
+              postRequest =>
+                complete(engine.formatImageBoardPost(imageBoardID, postRequest))
             }
           }
         }
-    }
+      } ~
+      get {
+        ignoreTrailingSlash {
+          path("proxy") {
+            complete(StatusCodes.OK)
+          }
+        }
+      }
 
   implicit val executionContext: ExecutionContextExecutor = this.actorSystem.dispatcher
 

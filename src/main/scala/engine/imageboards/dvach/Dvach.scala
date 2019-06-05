@@ -21,6 +21,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override val baseURL: String = "https://2ch.hk"
   override val captcha: Option[Captcha] = Some(
     Captcha(
+      url = "https://2ch.hk",
       kind = "reCAPTCHA v2",
       key = "6LdwXD4UAAAAAHxyTiwSMuge1-pf1ZiEL4qva_xu"
     )
@@ -238,12 +239,12 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override def formatPost(post: FormatPostRequest): FormatPostResponse = {
     FormatPostResponse(
       url = s"${this.baseURL}/makaba/posting.fcgi",
+      images = List.tabulate[String](post.images)(x => s"image${x + 1}"),
       data = DvachFormatPostData(
         board = post.board,
-        thread = post.thread,
+        thread = post.thread.orNull,
         subject = post.text,
         comment = post.text,
-        images = List.tabulate[String](post.images)(x => s"image${x + 1}"),
         `captcha-key` = this.captcha.get.key,
         `g-recaptcha-response` = post.captcha
       ).toJson
