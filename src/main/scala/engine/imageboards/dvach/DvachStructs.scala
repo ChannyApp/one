@@ -11,7 +11,7 @@ object DvachStructs {
   case class DvachFileResponse
   (
     fullname: Option[String],
-    displayname: String,
+    displayname: Option[String],
     path: String,
     thumbnail: String
   )

@@ -131,7 +131,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                             .map(
                               file =>
                                 File(
-                                  name = file.fullname.getOrElse(file.displayname),
+                                  name = file.fullname.getOrElse(file.displayname.getOrElse("File")),
                                   full = this.baseURL.concat(file.path),
                                   thumbnail = this.baseURL.concat(file.thumbnail)
                                 )
@@ -177,7 +177,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                           .map(
                             file =>
                               File(
-                                name = file.fullname.getOrElse(file.displayname),
+                                name = file.fullname.getOrElse(file.displayname.getOrElse("File")),
                                 full = this.baseURL.concat(file.path),
                                 thumbnail = this.baseURL.concat(file.thumbnail)
                               )
