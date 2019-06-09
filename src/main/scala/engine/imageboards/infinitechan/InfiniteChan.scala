@@ -19,8 +19,14 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   override val id: Int = 2
   override val name: String = "8chan"
   override val baseURL: String = "https://8ch.net"
-  override val captcha: Option[Captcha] = None
-  override val maxImages: Int = 1
+  override val captcha: Option[Captcha] = Some(
+    Captcha(
+      url = "https://8ch.net/dnsbls_bypass.php",
+      kind = "Custom",
+      key = ""
+    )
+  )
+  override val maxImages: Int = 5
   override val logo: String = "https://1d4chan.org/images/b/bc/8chan_logo.png"
   override val highlight: String = "#EEF2FF"
   override val clipboardRegExps: List[String] = List("/пиндоский инфинит чат/")
@@ -111,7 +117,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                                 File(
                                   name = filename,
                                   full = s"https://media.8ch.net/file_store/${thread.tim.get.concat(thread.ext.get)}",
-                                  thumbnail = s"https://media.8ch.net/file_store/${thread.tim.get.concat(thread.ext.get)}"
+                                  thumbnail = s"https://media.8ch.net/file_store/thumb/${thread.tim.get.concat(thread.ext.get)}"
                                 )
                               )
                           )
@@ -123,7 +129,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                                   file => File(
                                     name = file.filename,
                                     full = s"https://media.8ch.net/file_store/${file.tim.concat(file.ext)}",
-                                    thumbnail = s"https://media.8ch.net/file_store/${file.tim.concat(file.ext)}"
+                                    thumbnail = s"https://media.8ch.net/file_store/thumb/${file.tim.concat(file.ext)}"
                                   )
                                 )
                           ).getOrElse(List.empty),
@@ -171,7 +177,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                         File(
                           name = filename,
                           full = s"https://media.8ch.net/file_store/${post.tim.get.concat(post.ext.get)}",
-                          thumbnail = s"https://media.8ch.net/file_store/${post.tim.get.concat(post.ext.get)}"
+                          thumbnail = s"https://media.8ch.net/file_store/thumb/${post.tim.get.concat(post.ext.get)}"
                         )
                       ) ::: post.`extra_files`
                         .map(
@@ -181,7 +187,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                                 file => File(
                                   name = file.filename,
                                   full = s"https://media.8ch.net/file_store/${file.tim.concat(file.ext)}",
-                                  thumbnail = s"https://media.8ch.net/file_store/${file.tim.concat(file.ext)}"
+                                  thumbnail = s"https://media.8ch.net/file_store/thumb/${file.tim.concat(file.ext)}"
                                 )
                               )
                         ).getOrElse(List.empty)
@@ -243,5 +249,16 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
       }
   }
 
-  override def formatPost(post: FormatPostRequest): FormatPostResponse = ???
+  override def formatPost(post: FormatPostRequest): FormatPostResponse = {
+    FormatPostResponse(
+      url = "https://sys.8ch.net/post.php",
+      referer = "https://8ch.net/",
+      images = List("file") ++ List.tabulate[String](post.images - 1)(x => s"file${x + 2}"),
+      data = InfiniteChanFormatPostData(
+        body = post.text,
+        board = post.board,
+        thread = post.thread.orNull,
+      ).toJson
+    )
+  }
 }

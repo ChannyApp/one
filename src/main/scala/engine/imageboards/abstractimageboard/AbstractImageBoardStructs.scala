@@ -30,6 +30,7 @@ object AbstractImageBoardStructs {
   case class FormatPostResponse
   (
     url: String,
+    referer: String,
     images: List[String],
     data: JsValue
   )

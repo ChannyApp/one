@@ -237,6 +237,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
   override def formatPost(post: FormatPostRequest): FormatPostResponse = {
     FormatPostResponse(
       url = s"https://sys.4chan.org/${post.board}/post",
+      referer = "https://boards.4chan.org/",
       images = List("upfile"),
       data = FourChanFormatPostData(
         resto = post.thread.orNull,

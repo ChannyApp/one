@@ -39,4 +39,13 @@ object InfiniteChanStructs {
     `extra_files`: Option[List[InfiniteChanFileResponse]]
   )
 
+  case class InfiniteChanFormatPostData
+  (
+    body: String,
+    thread: String,
+    board: String,
+    `json_response`: Int = 1,
+    post: String = "New Reply"
+  )
+
 }

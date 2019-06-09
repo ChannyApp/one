@@ -37,7 +37,6 @@ object DvachStructs {
 
   case class DvachFormatPostData
   (
-    json: Int = 1,
     task: String = "post",
     board: String,
     thread: String,
