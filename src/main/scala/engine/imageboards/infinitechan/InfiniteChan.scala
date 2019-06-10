@@ -252,7 +252,9 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   override def formatPost(post: FormatPostRequest): FormatPostResponse = {
     FormatPostResponse(
       url = "https://sys.8ch.net/post.php",
-      referer = "https://8ch.net/",
+      headers = Map(
+        "Referer" -> "https://8ch.net/"
+      ),
       images = List("file") ++ List.tabulate[String](post.images - 1)(x => s"file${x + 2}"),
       data = InfiniteChanFormatPostData(
         body = post.text,

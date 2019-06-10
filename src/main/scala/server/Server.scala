@@ -41,32 +41,25 @@ class Server(engine: Engine)
               path(IntNumber / Segment) {
                 case (imageBoardID, boardID) =>
                   val response = engine.fetchImageBoardThreads(imageBoardID, boardID)
-                  onComplete(response) {
-                    case Success(value) =>
-                      value match {
-                        case Right(v) => complete(StatusCodes.OK -> v)
-                        case Left(e) => complete(StatusCodes.BadRequest -> e)
-                      }
+                  onSuccess(response) {
+                    case Right(v) => complete(StatusCodes.OK -> v)
+                    case Left(e) => complete(StatusCodes.BadRequest -> e)
                   }
               } ~
                 path(IntNumber / Segment / IntNumber) {
                   case (imageBoardID, boardID, threadID) =>
                     val response = engine.fetchImageBoardPosts(imageBoardID, boardID, threadID)
-                    onComplete(response) {
-                      case Success(value) => value match {
-                        case Right(v) => complete(StatusCodes.OK -> v)
-                        case Left(e) => complete(StatusCodes.BadRequest -> e)
-                      }
+                    onSuccess(response) {
+                      case Right(v) => complete(StatusCodes.OK -> v)
+                      case Left(e) => complete(StatusCodes.BadRequest -> e)
                     }
                 } ~
                 path(IntNumber / Segment / IntNumber / IntNumber) {
                   case (imageBoardID, boardID, threadID, postNumber) =>
                     val response = engine.fetchImageBoardPosts(imageBoardID, boardID, threadID, postNumber)
-                    onComplete(response) {
-                      case Success(value) => value match {
-                        case Right(v) => complete(StatusCodes.OK -> v)
-                        case Left(e) => complete(StatusCodes.BadRequest -> e)
-                      }
+                    onSuccess(response) {
+                      case Right(v) => complete(StatusCodes.OK -> v)
+                      case Left(e) => complete(StatusCodes.BadRequest -> e)
                     }
                 }
             }

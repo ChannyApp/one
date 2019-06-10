@@ -239,12 +239,14 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override def formatPost(post: FormatPostRequest): FormatPostResponse = {
     FormatPostResponse(
       url = s"${this.baseURL}/makaba/posting.fcgi?json=1",
-      referer = s"https://2ch.hk/${post.board}/",
+      headers = Map(
+        "Referer" -> s"https://2ch.hk/${post.board}/"
+      ),
       images = List.tabulate[String](post.images)(x => s"image${x + 1}"),
       data = DvachFormatPostData(
         board = post.board,
         thread = post.thread.orNull,
-        subject = post.text,
+        subject = post.subject,
         comment = post.text,
         `captcha-key` = this.captcha.get.key,
         `g-recaptcha-response` = post.captcha
