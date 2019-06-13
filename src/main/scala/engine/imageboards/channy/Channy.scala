@@ -32,7 +32,7 @@ class Channy(implicit client: Client) extends AbstractImageBoard {
       List(
         Board(
           id = "x",
-          name = "From Developers / От Разработчиков"
+          name = "Channy Dev Team"
         )
       )
     )
@@ -45,8 +45,9 @@ class Channy(implicit client: Client) extends AbstractImageBoard {
         List(
           Thread(
             id = "0",
-            subject = "ВАСАП ВАСЯ",
-            content = "Привет, мы разработчики Channy",
+            URL = "https://channy.io",
+            subject = "test",
+            content = "News",
             postsCount = 1,
             timestampt = 1,
             files = List(
@@ -72,7 +73,8 @@ class Channy(implicit client: Client) extends AbstractImageBoard {
         FetchPostsResponse(
           thread = Thread(
             id = "0",
-            subject = "ВАСАП ВАСЯ",
+            URL = "https://channy.io",
+            subject = "test",
             content = "Привет, мы разработчики Channy",
             postsCount = 1,
             timestampt = 1,

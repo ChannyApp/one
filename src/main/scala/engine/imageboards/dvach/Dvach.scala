@@ -119,6 +119,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                   val subject = this.fetchMarkups(thread.subject).content
                   Thread(
                     id = thread.num,
+                    URL = s"https://2ch.hk/$board/res/${thread.num}.html",
                     subject = subject,
                     content = extracted.content,
                     postsCount = thread.`posts_count` + 1,
@@ -197,6 +198,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
             FetchPostsResponse(
               thread = Thread(
                 id = originalPost.id,
+                URL = s"https://2ch.hk/$board/res/$id.html",
                 subject = subject
                   .map(
                     s =>

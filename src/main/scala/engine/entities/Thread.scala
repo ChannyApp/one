@@ -8,6 +8,7 @@ import spray.json._
 case class Thread
 (
   id: String,
+  URL: String,
   subject: String,
   content: String,
   postsCount: Int,
@@ -19,6 +20,6 @@ case class Thread
 )
 
 object ThreadImplicits {
-  implicit val threadFormat: RootJsonFormat[Thread] = jsonFormat9(Thread)
+  implicit val threadFormat: RootJsonFormat[Thread] = jsonFormat10(Thread)
 }
 

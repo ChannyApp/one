@@ -100,6 +100,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                       val extracted = this.fetchMarkups(thread.com)
                       Thread(
                         id = thread.no.toString,
+                        URL = s"https://8ch.net/$board/res/${thread.no}.html",
                         subject = thread.sub
                           .map(
                             s => this
@@ -205,6 +206,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
             FetchPostsResponse(
               thread = Thread(
                 id = originalPost.id,
+                URL = s"https://8ch.net/$board/res/$id.html",
                 subject = originalPost.content,
                 content = originalPost.content,
                 postsCount = formattedPosts.length + 1,

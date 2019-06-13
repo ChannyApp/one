@@ -104,6 +104,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                   val extracted = this.fetchMarkups(thread.com.getOrElse(""))
                   Thread(
                     id = thread.no.toString,
+                    URL = s"https://boards.4chan.org/$board/thread/${thread.no}",
                     subject = extracted.content,
                     content = extracted.content,
                     postsCount = thread.replies + 1,
@@ -189,6 +190,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
             FetchPostsResponse(
               thread = Thread(
                 id = originalPost.id,
+                URL = s"https://boards.4chan.org/$board/thread/$id",
                 subject = originalPost.content,
                 content = originalPost.content,
                 postsCount = formattedPosts.length + 1,

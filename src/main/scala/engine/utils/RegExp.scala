@@ -83,10 +83,6 @@ object Extractor {
       .toList
       .sortWith((m1, m2) => m1.open.start < m2.open.start)
 
-    //    println("CLEANED")
-    //    cleanedPairs.foreach(cp => println(cp))
-    //
-    //    println("==========")
 
     val extracted = try {
       this.extractMarkups(cleanedPairs)
