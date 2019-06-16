@@ -116,8 +116,8 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                           List(
                             File(
                               name = filename,
-                              full = s"https://i.4cdn.org/$board/${thread.tim.get.toString.concat(thread.ext.get)}",
-                              thumbnail = s"https://i.4cdn.org/$board/${thread.tim.get}.jpg"
+                              full = s"https://i.4cdn.org/$board/${thread.tim.get}${thread.ext.get}",
+                              thumbnail = s"https://i.4cdn.org/$board/${thread.tim.get}s.jpg"
                             )
                           )
                       ).getOrElse(List.empty),
@@ -165,8 +165,8 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                         List(
                           File(
                             name = filename,
-                            full = s"https://i.4cdn.org/$board/${post.tim.get.toString.concat(post.ext.get)}",
-                            thumbnail = s"https://i.4cdn.org/$board/${post.tim.get}.jpg"
+                            full = s"https://i.4cdn.org/$board/${post.tim.get}${post.ext.get}",
+                            thumbnail = s"https://i.4cdn.org/$board/${post.tim.get}s.jpg"
                           )
                         )
                     ).getOrElse(List.empty),
