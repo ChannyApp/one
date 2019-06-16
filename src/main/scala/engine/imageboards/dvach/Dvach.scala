@@ -2,15 +2,16 @@ package engine.imageboards.dvach
 
 import akka.http.scaladsl.model.headers.Cookie
 import client.Client
-import engine.entities.{Board, File, Post, Thread}
+import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.imageboards.dvach.DvachImplicits._
 import engine.imageboards.dvach.DvachStructs._
-import engine.utils.{Extracted, RegExpRule}
+import engine.utils.{Extracted, Extractor}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -31,51 +32,26 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override val highlight: String = "#F26722"
   override val clipboardRegExps: List[String] = List("/салямчик двачик/")
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
-  override val regExps: List[RegExpRule] = List(
-    RegExpRule(
-      openRegex = raw"""(<strong>)""".r,
-      closeRegex = raw"""(<\/strong>)""".r,
-      "bold"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<b>)""".r,
-      closeRegex = raw"""(<\/b>)""".r,
-      "bold"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<em>)""".r,
-      closeRegex = raw"""(<\/em>)""".r,
-      "italics"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<span class="unkfunc">)""".r,
-      closeRegex = raw"""<span class="unkfunc">.*?(<\/span>)""".r,
-      "quote"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<span class="spoiler">)""".r,
-      closeRegex = raw"""<span class="spoiler">.*?(<\/span>)""".r,
-      "spoiler"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<span class="s">)""".r,
-      closeRegex = raw"""<span class="s">.*?(<\/span>)""".r,
-      "strikethrough"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<span class="u">)""".r,
-      closeRegex = raw"""<span class="u">.*?(<\/span>)""".r,
-      "underline"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<a href="\/[\S]+\/.*" class="post-reply-link" data-thread="([\d]+)" data-num="([\d]+)">)""".r,
-      closeRegex = raw"""<a href="\/[\S]+\/.*" class="post-reply-link" data-thread="[\d]+" data-num="[\d]+">.*(<\/a>)""".r,
-      "reply"
-    ),
-
-  )
 
   println(s"[$name] Ready")
+
+  override def fetchMarkups(text: String): Extracted = {
+    Extractor(
+      text,
+      element => {
+        val elements = element.getElementsByClass("post-reply-link")
+        elements.iterator().asScala.map(
+          e => ReplyMarkup(
+            start = 0,
+            end = 0,
+            kind = "reply",
+            thread = e.attr("data-thread"),
+            post = e.attr("data-num")
+          )
+        ).toList
+      }
+    )
+  }
 
   override def fetchBoards(): Future[List[Board]] = {
     this
@@ -198,7 +174,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
             FetchPostsResponse(
               thread = Thread(
                 id = originalPost.id,
-                URL = s"https://2ch.hk/$board/res/$id.html",
+                URL = s"https://2ch.hk/$board/res/$thread.html",
                 subject = subject
                   .map(
                     s =>

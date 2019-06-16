@@ -5,7 +5,7 @@ import client.Client
 import engine.entities.{Board, File, Post, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
-import engine.utils.RegExpRule
+import engine.utils.Extracted
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -23,9 +23,9 @@ class Channy(implicit client: Client) extends AbstractImageBoard {
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
-  override val regExps: List[RegExpRule] = List.empty
-
   println(s"[$name] Ready")
+
+  override def fetchMarkups(text: String): Extracted = ???
 
   override def fetchBoards(): Future[List[Board]] = {
     Future(

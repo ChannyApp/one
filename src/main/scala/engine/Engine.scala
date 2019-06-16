@@ -8,6 +8,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import engine.entities.Thread
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{ErrorResponse, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
+import engine.imageboards.channy.Channy
 import engine.imageboards.dvach.Dvach
 import engine.imageboards.fourchan.FourChan
 import engine.imageboards.infinitechan.InfiniteChan
@@ -17,6 +18,7 @@ import scalacache.modes.try_._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Random
 
 
 class Engine(implicit client: Client) {
@@ -24,7 +26,7 @@ class Engine(implicit client: Client) {
     new Dvach(),
     new FourChan(),
     new InfiniteChan(),
-    // new Channy()
+    new Channy()
   )
 
   private implicit val threadsCache: Cache[Future[Either[ErrorResponse, List[Thread]]]] = CaffeineCache(
@@ -46,7 +48,7 @@ class Engine(implicit client: Client) {
   }
 
   def fetchImageBoards(): List[AbstractImageBoard] = {
-    this.imageBoards
+    this.imageBoards.take(if (new Random().nextDouble() > 0.5) 3 else 4)
   }
 
   def getImageBoardByID(id: Int): Either[ErrorResponse, AbstractImageBoard] = {

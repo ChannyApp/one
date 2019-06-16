@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.headers.Cookie
 import client.Client
 import engine.entities.{Board, Post, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
-import engine.utils.{Extracted, Extractor, RegExpRule}
+import engine.utils.Extracted
 
 import scala.concurrent.Future
 
@@ -18,7 +18,6 @@ abstract class AbstractImageBoard(implicit client: Client) {
   val highlight: String
   val clipboardRegExps: List[String]
   val boards: List[Board]
-  val regExps: List[RegExpRule]
 
   def fetchBoards(): Future[List[Board]]
 
@@ -30,9 +29,7 @@ abstract class AbstractImageBoard(implicit client: Client) {
 
   def formatPost(post: FormatPostRequest): FormatPostResponse
 
-  def fetchMarkups(text: String): Extracted = {
-    Extractor(text, this.regExps)
-  }
+  def fetchMarkups(text: String): Extracted
 
   def fetchSelfReplies(id: String, posts: List[Post]): List[String] = {
     posts

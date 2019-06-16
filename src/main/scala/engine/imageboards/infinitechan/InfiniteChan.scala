@@ -7,10 +7,11 @@ import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.imageboards.infinitechan.InfiniteChanImplicits._
 import engine.imageboards.infinitechan.InfiniteChanStructs._
-import engine.utils.RegExpRule
+import engine.utils.{Extracted, Extractor}
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -33,25 +34,25 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
-  override val regExps: List[RegExpRule] = List(
-    RegExpRule(
-      openRegex = raw"""(<span class="quote">)""".r,
-      closeRegex = raw"""<span class="quote">.*(<\/span>)""".r,
-      "quote"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<span class="deadlink">)""".r,
-      closeRegex = raw"""<span class="deadlink">.*(<\/span>)""".r,
-      "strikethrough"
-    ),
-    RegExpRule(
-      openRegex = raw"""(<a ()href="#p(.*)" class="quotelink">)""".r,
-      closeRegex = raw"""<a.*class="quotelink">.*(<\/a>)""".r,
-      "reply"
-    ),
-  )
-
   println(s"[$name] Ready")
+
+  override def fetchMarkups(text: String): Extracted = {
+    Extractor(
+      text,
+      element => {
+        val elements = element.getElementsByAttributeValueStarting("onclick", "highlightReply")
+        elements.iterator().asScala.map(
+          e => ReplyMarkup(
+            start = 0,
+            end = 0,
+            kind = "reply",
+            thread = e.attr("href").takeRight(20).dropRight(13),
+            post = e.attr("href").takeRight(7)
+          )
+        ).toList
+      }
+    )
+  }
 
   override def fetchBoards(): Future[List[Board]] = {
     this
