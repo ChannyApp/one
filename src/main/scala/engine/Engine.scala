@@ -18,7 +18,6 @@ import scalacache.modes.try_._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Random
 
 
 class Engine(implicit client: Client) {
@@ -48,7 +47,7 @@ class Engine(implicit client: Client) {
   }
 
   def fetchImageBoards(): List[AbstractImageBoard] = {
-    this.imageBoards.take(if (new Random().nextDouble() > 0.5) 3 else 4)
+    this.imageBoards
   }
 
   def getImageBoardByID(id: Int): Either[ErrorResponse, AbstractImageBoard] = {

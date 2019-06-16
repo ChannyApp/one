@@ -47,7 +47,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
             end = 0,
             kind = "reply",
             thread = e.attr("href"),
-            post = e.attr("href")
+            post = e.attr("href").drop(2)
           )
         ).toList
       }
