@@ -7,13 +7,6 @@ import org.jsoup.nodes.Element
 
 object Extractor {
   def apply(text: String, getReplies: Element => List[ReplyMarkup]): Extracted = {
-    //    val partiallyCleaned = Parser.unescapeEntities(
-    //      text
-    //        .replaceAll("<br>", "\n")
-    //        .replaceAll("\n\n\n+", "\n"),
-    //      false
-    //    )
-
     val body = Jsoup.parseBodyFragment(
       text
         .replaceAll("<br>", "\n")
