@@ -3,22 +3,29 @@ package engine.utils
 import engine.entities.{DecorationMarkup, LinkMarkup, ReplyMarkup}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import org.jsoup.parser.Parser
 
 
 object Extractor {
   def apply(text: String, getReplies: Element => List[ReplyMarkup]): Extracted = {
-    val partiallyCleaned = Parser.unescapeEntities(
+    //    val partiallyCleaned = Parser.unescapeEntities(
+    //      text
+    //        .replaceAll("<br>", "\n")
+    //        .replaceAll("\n\n\n+", "\n"),
+    //      false
+    //    )
+
+    val body = Jsoup.parseBodyFragment(
       text
         .replaceAll("<br>", "\n")
-        .replaceAll("\n\n\n+", "\n"),
-      false
-    )
+        .replaceAll("\n\n\n+", "\n")
+    ).body()
 
-    val body = Jsoup.parseBodyFragment(partiallyCleaned).body()
+    val cleaned = body
+      .wholeText()
+      .trim()
 
     Extracted(
-      content = body.text().trim(),
+      content = cleaned,
       replies = getReplies(body)
     )
   }
