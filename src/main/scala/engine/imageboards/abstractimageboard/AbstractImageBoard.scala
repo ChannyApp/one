@@ -1,6 +1,6 @@
 package engine.imageboards.abstractimageboard
 
-import akka.http.scaladsl.model.headers.Cookie
+import akka.http.scaladsl.model.headers.HttpCookiePair
 import client.Client
 import engine.entities.{Board, Post, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
@@ -22,10 +22,10 @@ abstract class AbstractImageBoard(implicit client: Client) {
   def fetchBoards(): Future[List[Board]]
 
   def fetchThreads(board: String)
-                  (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]]
+                  (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]]
 
   def fetchPosts(board: String, thread: Int, since: Int)
-                (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]]
+                (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]]
 
   def formatPost(post: FormatPostRequest): FormatPostResponse
 

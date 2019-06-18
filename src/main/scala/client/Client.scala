@@ -1,7 +1,7 @@
 package client
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.Cookie
+import akka.http.scaladsl.model.headers.{Cookie, HttpCookiePair}
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.{Http, HttpExt}
@@ -38,19 +38,17 @@ class Client(
   )
 
 
-  def GET(url: String)(implicit cookies: List[Cookie] = List.empty): Future[JsValue] = {
-    cookies.foreach(println(_))
+  def GET(url: String)(implicit cookies: List[HttpCookiePair] = List.empty): Future[JsValue] = {
+    val headers = if (cookies.isEmpty) List.empty else List(Cookie(cookies))
 
     val request = HttpRequest(
       method = HttpMethods.GET,
       uri = url,
-      headers = cookies
+      headers = headers
     )
+    println(request.cookies)
 
-    val response = this.innerClient.singleRequest(
-      request = request
-    )
-
+    val response = this.innerClient.singleRequest(request = request)
     response.flatMap(r => Unmarshal(r).to[String].map(_.parseJson))
   }
 }

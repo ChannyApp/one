@@ -1,6 +1,6 @@
 package engine.imageboards.infinitechan
 
-import akka.http.scaladsl.model.headers.Cookie
+import akka.http.scaladsl.model.headers.HttpCookiePair
 import client.Client
 import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
@@ -41,15 +41,18 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
       text,
       element => {
         val elements = element.getElementsByAttributeValueStarting("onclick", "highlightReply")
-        elements.iterator().asScala.map(
-          e => ReplyMarkup(
-            start = 0,
-            end = 0,
-            kind = "reply",
-            thread = e.attr("href").takeRight(20).dropRight(13),
-            post = e.attr("href").takeRight(7)
-          )
-        ).toList
+        elements
+          .iterator()
+          .asScala
+          .map(
+            e => ReplyMarkup(
+              start = 0,
+              end = 0,
+              kind = "reply",
+              thread = e.attr("href").takeRight(20).dropRight(13),
+              post = e.attr("href").takeRight(7)
+            )
+          ).toList
       }
     )
   }
@@ -77,7 +80,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchThreads(board: String)
-                           (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] = {
+                           (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     this
       .client
       .GET(s"${this.baseURL}/$board/catalog.json")
@@ -152,7 +155,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchPosts(board: String, thread: Int, since: Int)
-                         (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
+                         (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this
       .client
       .GET(s"${this.baseURL}/$board/res/$thread.json")

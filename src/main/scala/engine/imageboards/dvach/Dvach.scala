@@ -1,6 +1,6 @@
 package engine.imageboards.dvach
 
-import akka.http.scaladsl.model.headers.Cookie
+import akka.http.scaladsl.model.headers.HttpCookiePair
 import client.Client
 import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
@@ -77,7 +77,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchThreads(board: String)
-                           (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] = {
+                           (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     this
       .client
       .GET(url = s"${this.baseURL}/$board/catalog.json")
@@ -131,7 +131,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchPosts(board: String, thread: Int, since: Int)
-                         (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
+                         (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this
       .client
       .GET(s"${this.baseURL}/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}")

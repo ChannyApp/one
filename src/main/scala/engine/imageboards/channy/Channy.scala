@@ -1,6 +1,6 @@
 package engine.imageboards.channy
 
-import akka.http.scaladsl.model.headers.Cookie
+import akka.http.scaladsl.model.headers.HttpCookiePair
 import client.Client
 import engine.entities.{Board, File, Post, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
@@ -39,7 +39,7 @@ class Channy(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchThreads(board: String)
-                           (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, List[Thread]]] = {
+                           (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     Future(
       Right(
         List(
@@ -67,7 +67,7 @@ class Channy(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchPosts(board: String, thread: Int, since: Int)
-                         (implicit cookies: List[Cookie]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
+                         (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     Future(
       Right(
         FetchPostsResponse(
