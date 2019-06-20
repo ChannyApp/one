@@ -31,6 +31,7 @@ object InfiniteChanStructs {
   case class InfiniteChanPostsResponse
   (
     no: Int,
+    resto: Int,
     com: Option[String],
     time: Int,
     filename: Option[String],

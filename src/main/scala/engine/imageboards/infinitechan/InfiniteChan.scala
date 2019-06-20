@@ -39,19 +39,30 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   override def fetchMarkups(text: String): Extracted = {
     Extractor(
       text,
-      element => {
-        val elements = element.getElementsByAttributeValueStarting("onclick", "highlightReply")
+      body => {
+        List.empty
+      },
+      body => {
+        List.empty
+      },
+      body => {
+        val elements = body.getElementsByAttributeValueStarting("onclick", "highlightReply")
+        val bodyText = body.wholeText()
         elements
           .iterator()
           .asScala
           .map(
-            e => ReplyMarkup(
-              start = 0,
-              end = 0,
-              kind = "reply",
-              thread = e.attr("href").takeRight(20).dropRight(13),
-              post = e.attr("href").takeRight(7)
-            )
+            element => {
+              val elementText = element.wholeText()
+              val index = bodyText.indexOf(elementText)
+              ReplyMarkup(
+                start = index,
+                end = index + elementText.length,
+                kind = "reply",
+                thread = "1",
+                post = element.text().drop(2)
+              )
+            }
           ).toList
       }
     )
@@ -200,7 +211,16 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                   ).getOrElse(List.empty),
                   decorations = extracted.decorations,
                   links = extracted.links,
-                  replies = extracted.replies,
+                  replies = extracted.replies.map(
+                    reply =>
+                      ReplyMarkup(
+                        start = reply.start,
+                        end = reply.end,
+                        kind = reply.kind,
+                        thread = post.resto.toString,
+                        post = reply.post
+                      )
+                  ),
                   selfReplies = List.empty
                 )
               }

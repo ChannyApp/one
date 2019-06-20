@@ -2,7 +2,7 @@ package engine.imageboards.dvach
 
 import akka.http.scaladsl.model.headers.HttpCookiePair
 import client.Client
-import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
+import engine.entities.{Board, File, LinkMarkup, Post, ReplyMarkup, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.imageboards.dvach.DvachImplicits._
@@ -33,22 +33,90 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override val clipboardRegExps: List[String] = List("/салямчик двачик/")
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
+  val tags = List(
+    ("b", "bold"),
+    ("strong", "bold"),
+    ("em", "italics")
+  )
+  val spans = List(
+    ("s", "strikethrough"),
+    ("unkfunc", "quote"),
+    ("u", "underline"),
+    ("spoiler", "spoiler")
+  )
+
   println(s"[$name] Ready")
 
   override def fetchMarkups(text: String): Extracted = {
     Extractor(
       text,
-      element => {
-        val elements = element.getElementsByClass("post-reply-link")
-        elements.iterator().asScala.map(
-          e => ReplyMarkup(
-            start = 0,
-            end = 0,
-            kind = "reply",
-            thread = e.attr("data-thread"),
-            post = e.attr("data-num")
+      body => {
+        val taggedElements = tags
+          .flatMap(
+            x =>
+              body
+                .getElementsByTag(x._1)
+                .asScala
+                .toList
+                .map(element => (element, x._2))
           )
-        ).toList
+        val spannedElements = spans
+          .flatMap(
+            x =>
+              body
+                .getElementsByTag("span")
+                .asScala
+                .toList
+                .flatMap(
+                  element =>
+                    element
+                      .getElementsByClass(x._1)
+                      .asScala
+                      .toList
+                      .map(element => (element, x._2))
+                )
+          )
+        taggedElements ++ spannedElements
+      },
+      body => {
+        val elements = body.getElementsByTag("a")
+        val bodyText = body.wholeText()
+        elements
+          .iterator()
+          .asScala
+          .map(
+            element => {
+              val elementText = element.wholeText()
+              val index = bodyText.indexOf(elementText)
+              LinkMarkup(
+                start = index,
+                end = index + elementText.length,
+                kind = "external",
+                content = elementText,
+                link = element.attr("href")
+              )
+            }
+          ).toList
+      },
+      body => {
+        val elements = body.getElementsByClass("post-reply-link")
+        val bodyText = body.wholeText()
+        elements
+          .iterator()
+          .asScala
+          .map(
+            element => {
+              val elementText = element.wholeText()
+              val index = bodyText.indexOf(elementText)
+              ReplyMarkup(
+                start = index,
+                end = index + elementText.length,
+                kind = "reply",
+                thread = element.attr("data-thread"),
+                post = element.attr("data-num")
+              )
+            }
+          ).toList
       }
     )
   }
@@ -93,6 +161,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                 thread => {
                   val extracted = this.fetchMarkups(thread.comment)
                   val subject = this.fetchMarkups(thread.subject).content
+
                   Thread(
                     id = thread.num,
                     URL = s"https://2ch.hk/$board/res/${thread.num}.html",

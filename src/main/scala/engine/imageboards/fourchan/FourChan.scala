@@ -2,7 +2,7 @@ package engine.imageboards.fourchan
 
 import akka.http.scaladsl.model.headers.HttpCookiePair
 import client.Client
-import engine.entities.{Board, File, Post, ReplyMarkup, Thread}
+import engine.entities.{Board, File, LinkMarkup, Post, ReplyMarkup, Thread}
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs._
 import engine.imageboards.fourchan.FourChanImplicits._
@@ -34,22 +34,73 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
+  val spans = List(
+    ("deadlink", "strikethrough"),
+    ("quote", "quote")
+  )
+
   println(s"[$name] Ready")
 
   override def fetchMarkups(text: String): Extracted = {
     Extractor(
       text,
-      element => {
-        val elements = element.getElementsByClass("quotelink")
-        elements.iterator().asScala.map(
-          e => ReplyMarkup(
-            start = 0,
-            end = 0,
-            kind = "reply",
-            thread = e.attr("href"),
-            post = e.attr("href").drop(2)
+      body => {
+        val spannedElements = spans
+          .flatMap(
+            x =>
+              body
+                .getElementsByTag("span")
+                .asScala
+                .toList
+                .flatMap(
+                  element =>
+                    element
+                      .getElementsByClass(x._1)
+                      .asScala
+                      .toList
+                      .map(element => (element, x._2))
+                )
           )
-        ).toList
+        spannedElements
+      }, body => {
+        val elements = body.getElementsByTag("a")
+        val bodyText = body.wholeText()
+        elements
+          .iterator()
+          .asScala
+          .map(
+            element => {
+              val elementText = element.wholeText()
+              val index = bodyText.indexOf(elementText)
+              LinkMarkup(
+                start = index,
+                end = index + elementText.length,
+                kind = "external",
+                content = element.attr("href"),
+                link = element.attr("href")
+              )
+            }
+          ).toList
+      }, body => {
+        val elements = body.getElementsByClass("quotelink")
+        val bodyText = body.wholeText()
+
+        elements
+          .iterator()
+          .asScala
+          .map(
+            e => {
+              val elementText = e.wholeText()
+              val index = bodyText.indexOf(elementText)
+              ReplyMarkup(
+                start = index,
+                end = index + elementText.length,
+                kind = "reply",
+                thread = e.attr("href"),
+                post = e.attr("href").drop(2)
+              )
+            }
+          ).toList
       }
     )
   }

@@ -12,7 +12,7 @@ object InfiniteChanImplicits {
   implicit val infiniteChanThreadsResponseFormat: RootJsonFormat[InfiniteChanThreadsResponse] =
     jsonFormat9(InfiniteChanThreadsResponse)
   implicit val infiniteChanPostsResponseFormat: RootJsonFormat[InfiniteChanPostsResponse] =
-    jsonFormat7(InfiniteChanPostsResponse)
+    jsonFormat8(InfiniteChanPostsResponse)
   implicit val infiniteChanFormatPostDataFormat: RootJsonFormat[InfiniteChanFormatPostData] =
     jsonFormat5(InfiniteChanFormatPostData)
 }
