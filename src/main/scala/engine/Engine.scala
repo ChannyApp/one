@@ -8,7 +8,6 @@ import com.github.benmanes.caffeine.cache.{Cache, Caffeine}
 import engine.entities.Thread
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{ErrorResponse, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
-import engine.imageboards.channy.Channy
 import engine.imageboards.dvach.Dvach
 import engine.imageboards.fourchan.FourChan
 import engine.imageboards.infinitechan.InfiniteChan
@@ -21,8 +20,7 @@ class Engine(implicit client: Client) {
   private val imageBoards: List[AbstractImageBoard] = List(
     new Dvach(),
     new FourChan(),
-    new InfiniteChan(),
-    new Channy()
+    new InfiniteChan()
   )
 
   private val threadsCache: Cache[String, List[Thread]] = Caffeine
@@ -56,7 +54,6 @@ class Engine(implicit client: Client) {
     this.getImageBoardByID(id) match {
       case Right(imageboard) =>
         val key = id + board
-
         Option(threadsCache.getIfPresent(key)) match {
           case Some(threads) =>
             this.LOG(s"Cache HIT on ${imageboard.name} | $board")
@@ -79,7 +76,6 @@ class Engine(implicit client: Client) {
     this.getImageBoardByID(id) match {
       case Right(imageboard) =>
         val key = id + board + thread + since
-
         Option(postsCache.getIfPresent(key)) match {
           case Some(posts) =>
             this.LOG(s"Cache HIT on ${imageboard.name} | $board | $thread")
