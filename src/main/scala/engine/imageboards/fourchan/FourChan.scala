@@ -28,7 +28,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
     )
   )
   override val maxImages: Int = 1
-  override val logo: String = "https://s.4cdn.org/image/fp/logo-transparent.png"
+  override val logo: String = "https://channy.io/4ch-icon.png"
   override val highlight: String = "#117743"
   override val clipboardRegExps: List[String] = List("/пиндоский форч/")
 

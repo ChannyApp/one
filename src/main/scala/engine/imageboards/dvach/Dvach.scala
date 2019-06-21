@@ -28,7 +28,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
     )
   )
   override val maxImages: Int = 4
-  override val logo: String = "https://2ch.hk/newtest/resources/images/dvlogo.png"
+  override val logo: String = "https://channy.io/2ch-icon.png"
   override val highlight: String = "#F26722"
   override val clipboardRegExps: List[String] = List("/салямчик двачик/")
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
