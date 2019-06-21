@@ -28,7 +28,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
     )
   )
   override val maxImages: Int = 5
-  override val logo: String = "https://1d4chan.org/images/b/bc/8chan_logo.png"
+  override val logo: String = "https://channy.io/8ch-icon.png"
   override val highlight: String = "#EEF2FF"
   override val clipboardRegExps: List[String] = List("/пиндоский инфинит чат/")
 
