@@ -242,7 +242,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
             FetchPostsResponse(
               thread = Thread(
                 id = originalPost.id,
-                URL = s"https://boards.4chan.org/$board/thread/$id",
+                URL = s"https://boards.4chan.org/$board/thread/$thread",
                 subject = originalPost.content,
                 content = originalPost.content,
                 postsCount = formattedPosts.length + 1,
