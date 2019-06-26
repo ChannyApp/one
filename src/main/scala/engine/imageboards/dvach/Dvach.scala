@@ -134,8 +134,10 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
           .map(
             board =>
               Board(id = board.id, name = board.name)
-          )
-          .toList
+          ) ::: List(
+          Board(id = "dev", name = "Тянач"),
+          Board(id = "test", name = "Тестовый раздел")
+        )
       )
       .recover {
         case e: Exception =>
