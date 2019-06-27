@@ -18,9 +18,9 @@ object AbstractImageBoardImplicits extends DefaultJsonProtocol with NullOptions 
         "captcha" -> imageBoard.captcha.toJson,
         "maxImages" -> JsNumber(imageBoard.maxImages),
         "logo" -> JsString(imageBoard.logo),
+        "label" -> JsString(imageBoard.label),
         "highlight" -> JsString(imageBoard.highlight),
-        "boards" -> imageBoard.boards.toJson,
-        "clipboardRegExps" -> imageBoard.clipboardRegExps.toJson
+        "boards" -> imageBoard.boards.toJson
       )
     }
 

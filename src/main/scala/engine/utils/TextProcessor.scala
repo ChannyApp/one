@@ -36,25 +36,24 @@ object Extractor {
       .flatMap(
         element => {
           val elementText = element._1.wholeText()
-          if (!elementText.isEmpty) {
-            indexesOf(bodyText, elementText)
-              .map(
-                start => {
-                  DecorationMarkup(
-                    start = start,
-                    end = start + elementText.length,
-                    kind = element._2
-                  )
-                }
-              )
-          } else {
-            List.empty
-          }
+          indexesOf(bodyText, elementText)
+            .map(
+              start => {
+                DecorationMarkup(
+                  start = start,
+                  end = start + elementText.length,
+                  kind = element._2
+                )
+              }
+            )
         }
       ).distinct
   }
 
   def indexesOf(source: String, target: String, index: Int = 0, withinOverlaps: Boolean = false): List[Int] = {
+    if (source.isEmpty || target.isEmpty)
+      return List.empty
+
     def recursive(indexTarget: Int = index, accumulator: List[Int] = Nil): List[Int] = {
       val position = source.indexOf(target, indexTarget)
       if (position == -1)

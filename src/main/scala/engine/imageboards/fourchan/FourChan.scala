@@ -29,8 +29,8 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
   )
   override val maxImages: Int = 1
   override val logo: String = "https://channy.io/4ch-icon.png"
+  override val label: String = "supported by /r/4chan subreddit"
   override val highlight: String = "#117743"
-  override val clipboardRegExps: List[String] = List("/пиндоский форч/")
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
@@ -68,37 +68,44 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
         elements
           .iterator()
           .asScala
-          .map(
+          .flatMap(
             element => {
               val elementText = element.wholeText()
-              val index = bodyText.indexOf(elementText)
-              LinkMarkup(
-                start = index,
-                end = index + elementText.length,
-                kind = "external",
-                content = element.attr("href"),
-                link = element.attr("href")
-              )
+              val indexes = Extractor.indexesOf(bodyText, elementText)
+              indexes
+                .map(
+                  index =>
+                    LinkMarkup(
+                      start = index,
+                      end = index + elementText.length,
+                      kind = "external",
+                      content = element.attr("href"),
+                      link = element.attr("href")
+                    )
+                )
             }
           ).toList
       }, body => {
         val elements = body.getElementsByClass("quotelink")
         val bodyText = body.wholeText()
-
         elements
           .iterator()
           .asScala
-          .map(
+          .flatMap(
             e => {
               val elementText = e.wholeText()
-              val index = bodyText.indexOf(elementText)
-              ReplyMarkup(
-                start = index,
-                end = index + elementText.length,
-                kind = "reply",
-                thread = e.attr("href"),
-                post = e.attr("href").drop(2)
-              )
+              val indexes = Extractor.indexesOf(bodyText, elementText)
+              indexes
+                .map(
+                  index =>
+                    ReplyMarkup(
+                      start = index,
+                      end = index + elementText.length,
+                      kind = "reply",
+                      thread = 0,
+                      post = BigInt(e.attr("href").drop(2))
+                    )
+                )
             }
           ).toList
       }
@@ -155,7 +162,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                 thread => {
                   val extracted = this.fetchMarkups(thread.com.getOrElse(""))
                   Thread(
-                    id = thread.no.toString,
+                    id = thread.no,
                     URL = s"https://boards.4chan.org/$board/thread/${thread.no}",
                     subject = extracted.content,
                     content = extracted.content,
@@ -207,7 +214,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
               post => {
                 val extracted = this.fetchMarkups(post.com.getOrElse(""))
                 Post(
-                  id = post.no.toString,
+                  id = post.no,
                   content = extracted.content,
                   timestamp = post.time,
                   files = post.filename
@@ -229,7 +236,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                         start = reply.start,
                         end = reply.end,
                         kind = reply.kind,
-                        thread = post.resto.toString,
+                        thread = post.resto,
                         post = reply.post
                       )
                   ),

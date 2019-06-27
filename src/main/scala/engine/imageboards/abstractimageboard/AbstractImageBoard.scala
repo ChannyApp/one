@@ -15,8 +15,8 @@ abstract class AbstractImageBoard(implicit client: Client) {
   val captcha: Option[Captcha]
   val maxImages: Int
   val logo: String
+  val label: String
   val highlight: String
-  val clipboardRegExps: List[String]
   val boards: List[Board]
 
   def fetchBoards(): Future[List[Board]]
@@ -31,9 +31,9 @@ abstract class AbstractImageBoard(implicit client: Client) {
 
   def fetchMarkups(text: String): Extracted
 
-  def fetchSelfReplies(id: String, posts: List[Post]): List[String] = {
+  def fetchSelfReplies(id: BigInt, posts: List[Post]): List[BigInt] = {
     posts
-      .foldLeft(List.empty[String])(
+      .foldLeft(List.empty[BigInt])(
         (accumulator, current) => {
           current.replies.exists(rp => rp.post == id) match {
             case true => accumulator ::: List(current.id)

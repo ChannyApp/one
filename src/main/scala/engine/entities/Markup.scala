@@ -24,8 +24,8 @@ case class ReplyMarkup
   start: Int,
   end: Int,
   kind: String,
-  thread: String,
-  post: String
+  thread: BigInt,
+  post: BigInt
 )
 
 

@@ -7,7 +7,7 @@ import spray.json._
 
 case class Thread
 (
-  id: String,
+  id: BigInt,
   URL: String,
   subject: String,
   content: String,

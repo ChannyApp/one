@@ -11,6 +11,7 @@ import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{ErrorRes
 import engine.imageboards.dvach.Dvach
 import engine.imageboards.fourchan.FourChan
 import engine.imageboards.infinitechan.InfiniteChan
+import engine.imageboards.kohlchan.KohlChan
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,7 +21,8 @@ class Engine(implicit client: Client) {
   private val imageBoards: List[AbstractImageBoard] = List(
     new Dvach(),
     new FourChan(),
-    new InfiniteChan()
+    new InfiniteChan(),
+    new KohlChan()
   )
 
   private val threadsCache: Cache[String, List[Thread]] = Caffeine

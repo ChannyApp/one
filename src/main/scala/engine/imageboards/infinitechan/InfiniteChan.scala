@@ -29,8 +29,8 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   )
   override val maxImages: Int = 5
   override val logo: String = "https://channy.io/8ch-icon.png"
+  override val label: String = ""
   override val highlight: String = "#EEF2FF"
-  override val clipboardRegExps: List[String] = List("/пиндоский инфинит чат/")
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
@@ -51,17 +51,21 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
         elements
           .iterator()
           .asScala
-          .map(
+          .flatMap(
             element => {
               val elementText = element.wholeText()
-              val index = bodyText.indexOf(elementText)
-              ReplyMarkup(
-                start = index,
-                end = index + elementText.length,
-                kind = "reply",
-                thread = "1",
-                post = element.text().drop(2)
-              )
+              val indexes = Extractor.indexesOf(bodyText, elementText)
+              indexes
+                .map(
+                  index =>
+                    ReplyMarkup(
+                      start = index,
+                      end = index + elementText.length,
+                      kind = "reply",
+                      thread = 0,
+                      post = BigInt(element.text().drop(2))
+                    )
+                )
             }
           ).toList
       }
@@ -114,8 +118,8 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                     thread => {
                       val extracted = this.fetchMarkups(thread.com)
                       Thread(
-                        id = thread.no.toString,
-                        URL = s"https://8ch.net/$board/res/${thread.no}.html",
+                        id = thread.no,
+                        URL = s"${this.baseURL}/$board/res/${thread.no}.html",
                         subject = thread.sub
                           .map(
                             s => this
@@ -182,9 +186,9 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
           val formattedPosts = posts
             .map(
               post => {
-                val extracted = this.fetchMarkups(post.com.getOrElse(""))
+                val extracted = post.com.map(c => this.fetchMarkups(c)).getOrElse(Extracted())
                 Post(
-                  id = post.no.toString,
+                  id = post.no,
                   content = extracted.content,
                   timestamp = post.time,
                   files = post.filename.map(
@@ -217,7 +221,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                         start = reply.start,
                         end = reply.end,
                         kind = reply.kind,
-                        thread = post.resto.toString,
+                        thread = post.resto,
                         post = reply.post
                       )
                   ),
@@ -230,7 +234,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
             FetchPostsResponse(
               thread = Thread(
                 id = originalPost.id,
-                URL = s"https://8ch.net/$board/res/$id.html",
+                URL = s"${this.baseURL}/$board/res/$id.html",
                 subject = originalPost.content,
                 content = originalPost.content,
                 postsCount = formattedPosts.length + 1,

@@ -7,14 +7,14 @@ import spray.json._
 
 case class Post
 (
-  id: String,
+  id: BigInt,
   content: String,
   timestamp: Int,
   files: List[File],
   decorations: List[DecorationMarkup],
   links: List[LinkMarkup],
   replies: List[ReplyMarkup],
-  selfReplies: List[String]
+  selfReplies: List[BigInt]
 )
 
 object PostImplicits {

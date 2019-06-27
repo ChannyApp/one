@@ -29,8 +29,9 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   )
   override val maxImages: Int = 4
   override val logo: String = "https://channy.io/2ch-icon.png"
+  override val label: String = "Абу благословил эту борду"
   override val highlight: String = "#F26722"
-  override val clipboardRegExps: List[String] = List("/салямчик двачик/")
+
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
 
   val tags = List(
@@ -84,19 +85,23 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
         elements
           .iterator()
           .asScala
-          .map(
+          .filter(element => !element.hasClass("post-reply-link"))
+          .flatMap(
             element => {
               val elementText = element.wholeText()
-              val index = bodyText.indexOf(elementText)
-              LinkMarkup(
-                start = index,
-                end = index + elementText.length,
-                kind = "external",
-                content = elementText,
-                link = element.attr("href")
-              )
+              val indexes = Extractor.indexesOf(bodyText, elementText)
+              indexes
+                .map(
+                  index => LinkMarkup(
+                    start = index,
+                    end = index + elementText.length,
+                    kind = "external",
+                    content = elementText,
+                    link = element.attr("href")
+                  )
+                )
             }
-          ).toList
+          ).toList.distinct
       },
       body => {
         val elements = body.getElementsByClass("post-reply-link")
@@ -104,19 +109,22 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
         elements
           .iterator()
           .asScala
-          .map(
+          .flatMap(
             element => {
               val elementText = element.wholeText()
-              val index = bodyText.indexOf(elementText)
-              ReplyMarkup(
-                start = index,
-                end = index + elementText.length,
-                kind = "reply",
-                thread = element.attr("data-thread"),
-                post = element.attr("data-num")
-              )
+              val indexes = Extractor.indexesOf(bodyText, elementText)
+              indexes
+                .map(
+                  index => ReplyMarkup(
+                    start = index,
+                    end = index + elementText.length,
+                    kind = "reply",
+                    thread = BigInt(element.attr("data-thread")),
+                    post = BigInt(element.attr("data-num"))
+                  )
+                )
             }
-          ).toList
+          ).toList.distinct
       }
     )
   }
@@ -135,8 +143,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
             board =>
               Board(id = board.id, name = board.name)
           ) ::: List(
-          Board(id = "dev", name = "Тянач"),
-          Board(id = "test", name = "Тестовый раздел")
+          Board(id = "dev", name = "Тянач")
         )
       )
       .recover {
@@ -162,12 +169,10 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
               .map(
                 thread => {
                   val extracted = this.fetchMarkups(thread.comment)
-                  val subject = this.fetchMarkups(thread.subject).content
-
                   Thread(
-                    id = thread.num,
-                    URL = s"https://2ch.hk/$board/res/${thread.num}.html",
-                    subject = subject,
+                    id = BigInt(thread.num),
+                    URL = s"${this.baseURL}/$board/res/${thread.num}.html",
+                    subject = thread.subject,
                     content = extracted.content,
                     postsCount = thread.`posts_count` + 1,
                     timestampt = thread.timestamp,
@@ -214,7 +219,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
               post => {
                 val extracted: Extracted = this.fetchMarkups(post.comment)
                 Post(
-                  id = post.num,
+                  id = BigInt(post.num),
                   content = extracted.content,
                   timestamp = post.timestamp,
                   files = post
@@ -239,26 +244,19 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                 )
               }
             )
-          val originalPost: Post = formattedPosts.head
-          val subject = posts.head.subject
           Right(
             FetchPostsResponse(
               thread = Thread(
-                id = originalPost.id,
-                URL = s"https://2ch.hk/$board/res/$thread.html",
-                subject = subject
-                  .map(
-                    s =>
-                      this.fetchMarkups(s).content
-                  )
-                  .getOrElse(originalPost.content),
-                content = originalPost.content,
+                id = formattedPosts.head.id,
+                URL = s"${this.baseURL}/$board/res/$thread.html",
+                subject = posts.head.subject.getOrElse(formattedPosts.head.content),
+                content = formattedPosts.head.content,
                 postsCount = formattedPosts.length + 1,
-                timestampt = originalPost.timestamp,
-                files = originalPost.files,
-                decorations = originalPost.decorations,
-                links = originalPost.links,
-                replies = originalPost.replies,
+                timestampt = formattedPosts.head.timestamp,
+                files = formattedPosts.head.files,
+                decorations = formattedPosts.head.decorations,
+                links = formattedPosts.head.links,
+                replies = formattedPosts.head.replies,
               ),
               posts = formattedPosts
                 .map(

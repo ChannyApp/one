@@ -22,7 +22,7 @@ object File {
     if (images.exists(ext => path.endsWith(ext)))
       return "image"
 
-    val videos: List[String] = List("webm", "mp4")
+    val videos: List[String] = List("webm", "mp4", "mp3", "ogg", "aac")
     if (videos.exists(ext => path.endsWith(ext)))
       return "video"
 
