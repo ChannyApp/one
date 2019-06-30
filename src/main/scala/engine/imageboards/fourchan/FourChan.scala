@@ -115,7 +115,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
   override def fetchBoards(): Future[List[Board]] = {
     this
       .client
-      .GET(s"${this.baseURL}/boards.json")
+      .getJSON(s"${this.baseURL}/boards.json")
       .map(
         _
           .asJsObject
@@ -141,7 +141,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                            (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     this
       .client
-      .GET(s"${this.baseURL}/$board/catalog.json")
+      .getJSON(s"${this.baseURL}/$board/catalog.json")
       .map(
         response =>
           Right(
@@ -167,7 +167,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                     subject = extracted.content,
                     content = extracted.content,
                     postsCount = thread.replies + 1,
-                    timestampt = thread.time,
+                    timestamp = thread.time,
                     files = thread.filename
                       .map(
                         filename =>
@@ -198,7 +198,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                          (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this
       .client
-      .GET(s"${this.baseURL}/$board/thread/$thread.json")
+      .getJSON(s"${this.baseURL}/$board/thread/$thread.json")
       .map(
         response =>
           response
@@ -253,7 +253,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                 subject = originalPost.content,
                 content = originalPost.content,
                 postsCount = formattedPosts.length + 1,
-                timestampt = originalPost.timestamp,
+                timestamp = originalPost.timestamp,
                 files = originalPost.files,
                 decorations = originalPost.decorations,
                 links = originalPost.links,

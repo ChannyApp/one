@@ -12,7 +12,7 @@ case class Thread
   subject: String,
   content: String,
   postsCount: Int,
-  timestampt: Int,
+  timestamp: Int,
   files: List[File],
   decorations: List[DecorationMarkup],
   links: List[LinkMarkup],

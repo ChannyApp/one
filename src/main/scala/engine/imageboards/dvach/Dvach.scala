@@ -132,7 +132,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
   override def fetchBoards(): Future[List[Board]] = {
     this
       .client
-      .GET(s"${this.baseURL}/boards.json")
+      .getJSON(s"${this.baseURL}/boards.json")
       .map(
         _
           .asJsObject
@@ -157,7 +157,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                            (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     this
       .client
-      .GET(url = s"${this.baseURL}/$board/catalog.json")
+      .getJSON(url = s"${this.baseURL}/$board/catalog.json")
       .map(
         response =>
           Right(
@@ -175,7 +175,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                     subject = Extractor.extractSimplifiedText(thread.subject),
                     content = extracted.content,
                     postsCount = thread.`posts_count` + 1,
-                    timestampt = thread.timestamp,
+                    timestamp = thread.timestamp,
                     files = thread
                       .files
                       .map(
@@ -210,7 +210,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                          (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this
       .client
-      .GET(s"${this.baseURL}/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}")
+      .getJSON(s"${this.baseURL}/makaba/mobile.fcgi?task=get_thread&board=$board&thread=$thread&post=${since + 1}")
       .map(_.convertTo[List[DvachPostsResponse]])
       .map(
         posts => {
@@ -256,7 +256,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                   .getOrElse(formattedPosts.head.content),
                 content = formattedPosts.head.content,
                 postsCount = formattedPosts.length + 1,
-                timestampt = formattedPosts.head.timestamp,
+                timestamp = formattedPosts.head.timestamp,
                 files = formattedPosts.head.files,
                 decorations = formattedPosts.head.decorations,
                 links = formattedPosts.head.links,

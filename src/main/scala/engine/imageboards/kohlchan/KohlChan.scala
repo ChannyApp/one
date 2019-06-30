@@ -70,7 +70,7 @@ class KohlChan(implicit client: Client) extends AbstractImageBoard {
   override def fetchBoards(): Future[List[Board]] = {
     this
       .client
-      .GET(s"${this.baseURL}/boards.js?json=1")
+      .getJSON(s"${this.baseURL}/boards.js?json=1")
       .map(
         _
           .asJsObject
@@ -96,7 +96,7 @@ class KohlChan(implicit client: Client) extends AbstractImageBoard {
                            (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     this
       .client
-      .GET(url = s"${this.baseURL}/$board/catalog.json")
+      .getJSON(url = s"${this.baseURL}/$board/catalog.json")
       .map(
         response =>
           Right(
@@ -113,7 +113,7 @@ class KohlChan(implicit client: Client) extends AbstractImageBoard {
                     subject = subject,
                     content = extracted.content,
                     postsCount = thread.postCount.getOrElse(1),
-                    timestampt = (thread.lastBump.clicks / 1000).toInt,
+                    timestamp = (thread.lastBump.clicks / 1000).toInt,
                     files = List(
                       {
                         val parts = thread.thumb.splitAt(8)
@@ -150,7 +150,7 @@ class KohlChan(implicit client: Client) extends AbstractImageBoard {
                          (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this
       .client
-      .GET(url = s"${this.baseURL}/$board/res/$thread.json")
+      .getJSON(url = s"${this.baseURL}/$board/res/$thread.json")
       .map(
         response =>
           Right(
@@ -191,7 +191,7 @@ class KohlChan(implicit client: Client) extends AbstractImageBoard {
                   subject = OP.subject.getOrElse(extracted.content),
                   content = extracted.content,
                   postsCount = rest.length + 1,
-                  timestampt = (OP.creation.clicks / 1000).toInt,
+                  timestamp = (OP.creation.clicks / 1000).toInt,
                   files = OP.files.map(
                     file =>
                       File(

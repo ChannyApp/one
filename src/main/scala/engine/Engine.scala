@@ -12,6 +12,7 @@ import engine.imageboards.dvach.Dvach
 import engine.imageboards.fourchan.FourChan
 import engine.imageboards.infinitechan.InfiniteChan
 import engine.imageboards.kohlchan.KohlChan
+import engine.imageboards.ylilauta.Ylilauta
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,7 +23,8 @@ class Engine(implicit client: Client) {
     new Dvach(),
     new FourChan(),
     new InfiniteChan(),
-    new KohlChan()
+    new KohlChan(),
+    new Ylilauta()
   )
 
   private val threadsCache: Cache[String, List[Thread]] = Caffeine

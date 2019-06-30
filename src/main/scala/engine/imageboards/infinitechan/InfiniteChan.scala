@@ -75,7 +75,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
   override def fetchBoards(): Future[List[Board]] = {
     this
       .client
-      .GET(s"${this.baseURL}/boards-top20.json")
+      .getJSON(s"${this.baseURL}/boards-top20.json")
       .map(
         _
           .convertTo[List[InfiniteChanBoardsResponse]]
@@ -98,7 +98,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                            (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, List[Thread]]] = {
     this
       .client
-      .GET(s"${this.baseURL}/$board/catalog.json")
+      .getJSON(s"${this.baseURL}/$board/catalog.json")
       .map(
         response =>
           Right(
@@ -129,7 +129,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                           .getOrElse(extracted.content),
                         content = extracted.content,
                         postsCount = thread.replies + 1,
-                        timestampt = thread.time,
+                        timestamp = thread.time,
                         files = thread.filename
                           .map(
                             filename =>
@@ -173,7 +173,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                          (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
     this
       .client
-      .GET(s"${this.baseURL}/$board/res/$thread.json")
+      .getJSON(s"${this.baseURL}/$board/res/$thread.json")
       .map(
         _
           .asJsObject
@@ -238,7 +238,7 @@ class InfiniteChan(implicit client: Client) extends AbstractImageBoard {
                 subject = originalPost.content,
                 content = originalPost.content,
                 postsCount = formattedPosts.length + 1,
-                timestampt = originalPost.timestamp,
+                timestamp = originalPost.timestamp,
                 files = originalPost.files,
                 decorations = originalPost.decorations,
                 links = originalPost.links,
