@@ -31,6 +31,22 @@ object Extractor {
     )
   }
 
+  def extractWholeText(text: String): String = {
+    Jsoup.parseBodyFragment(
+      text
+        .replaceAll("<br>", "\n")
+        .replaceAll("\n\n\n+", "\n")
+    ).body().wholeText()
+  }
+
+  def extractSimplifiedText(text: String): String = {
+    Jsoup.parseBodyFragment(
+      text
+        .replaceAll("<br>", "\n")
+        .replaceAll("\n\n\n+", "\n")
+    ).body().text()
+  }
+
   def processDecorations(bodyText: String, elements: List[(Element, String)]): List[DecorationMarkup] = {
     elements
       .flatMap(

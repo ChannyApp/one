@@ -172,7 +172,7 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
                   Thread(
                     id = BigInt(thread.num),
                     URL = s"${this.baseURL}/$board/res/${thread.num}.html",
-                    subject = thread.subject,
+                    subject = Extractor.extractSimplifiedText(thread.subject),
                     content = extracted.content,
                     postsCount = thread.`posts_count` + 1,
                     timestampt = thread.timestamp,
@@ -249,7 +249,11 @@ class Dvach(implicit client: Client) extends AbstractImageBoard {
               thread = Thread(
                 id = formattedPosts.head.id,
                 URL = s"${this.baseURL}/$board/res/$thread.html",
-                subject = posts.head.subject.getOrElse(formattedPosts.head.content),
+                subject = posts
+                  .head
+                  .subject
+                  .map(Extractor.extractSimplifiedText)
+                  .getOrElse(formattedPosts.head.content),
                 content = formattedPosts.head.content,
                 postsCount = formattedPosts.length + 1,
                 timestampt = formattedPosts.head.timestamp,
