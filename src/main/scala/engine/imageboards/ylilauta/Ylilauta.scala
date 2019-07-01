@@ -63,7 +63,7 @@ class Ylilauta(implicit client: Client) extends AbstractImageBoard {
       .client
       .getHTML(s"${this.baseURL}/$board/", HttpMethods.POST)
       .map(
-        body => {
+        body =>
           Right(
             body
               .getElementsByClass("thread")
@@ -101,14 +101,14 @@ class Ylilauta(implicit client: Client) extends AbstractImageBoard {
                   ).getOrElse(1)
                   val files = Option(
                     OP
-                      .getElementsByClass("file-data")
+                      .getElementsByClass("file-content")
                       .first()
                   ).map(
                     f => List(
                       File(
                         name = "File",
-                        full = f.attr("src"),
-                        thumbnail = f.attr("src")
+                        full = f.attr("href"),
+                        thumbnail = f.attr("href")
                       )
                     )
                   ).getOrElse(List.empty)
@@ -127,7 +127,6 @@ class Ylilauta(implicit client: Client) extends AbstractImageBoard {
                 }
               ).toList
           )
-        }
       )
       .recover {
         case e: Exception =>
@@ -137,7 +136,122 @@ class Ylilauta(implicit client: Client) extends AbstractImageBoard {
   }
 
   override def fetchPosts(board: String, thread: Int, since: Int)
-                         (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = ???
+                         (implicit cookies: List[HttpCookiePair]): Future[Either[ErrorResponse, FetchPostsResponse]] = {
+    this
+      .client
+      .getHTML(s"${this.baseURL}/$board/$thread", HttpMethods.POST)
+      .map(
+        body =>
+          Right(
+            {
+              val OP = body
+                .getElementsByClass("op_post")
+                .first()
+
+              val posts = body
+                .getElementsByClass("post answer")
+                .iterator()
+                .asScala
+                .map(
+                  post => {
+                    Post(
+                      id = BigInt(post.attr("data-id")),
+                      content = post
+                        .getElementsByClass("postcontent")
+                        .first()
+                        .wholeText(),
+                      timestamp = (DateTime.fromIsoDateTimeString(
+                        post
+                          .getElementsByClass("posttime")
+                          .first()
+                          .attr("datetime")
+                          .dropRight(5)
+                      ).get.clicks / 1000).toInt,
+                      files = Option(
+                        post
+                          .getElementsByClass("file-content")
+                          .first()
+                      ).map(
+                        f => List(
+                          File(
+                            name = "File",
+                            full = f.attr("href"),
+                            thumbnail = f.attr("href")
+                          )
+                        )
+                      ).getOrElse(List.empty),
+                      decorations = List.empty,
+                      links = List.empty,
+                      replies = List.empty,
+                      selfReplies = Option(
+                        post
+                          .getElementsByClass("replies")
+                          .first()
+                      ).map(
+                        element => {
+                          element
+                            .getElementsByTag("a")
+                            .iterator()
+                            .asScala
+                            .map(
+                              reply => {
+                                BigInt(reply.attr("data-id"))
+                              }
+                            ).toList
+                        }
+                      ).getOrElse(List.empty)
+                    )
+                  }
+                ).toList
+
+              FetchPostsResponse(
+                thread = Thread(
+                  id = BigInt(OP.attr("data-id")),
+                  URL = s"${this.baseURL}/$board/$id",
+                  subject = OP
+                    .getElementsByClass("postsubject")
+                    .first()
+                    .text(),
+                  content = OP
+                    .getElementsByClass("postcontent")
+                    .first()
+                    .wholeText(),
+                  postsCount = 99999,
+                  timestamp = (DateTime.fromIsoDateTimeString(
+                    OP
+                      .getElementsByClass("posttime")
+                      .first()
+                      .attr("datetime")
+                      .dropRight(5)
+                  ).get.clicks / 1000).toInt,
+                  files = Option(
+                    OP
+                      .getElementsByClass("file-content")
+                      .first()
+                  ).map(
+                    f => List(
+                      File(
+                        name = "File",
+                        full = f.attr("href"),
+                        thumbnail = f.attr("href")
+                      )
+                    )
+                  ).getOrElse(List.empty),
+                  decorations = List.empty,
+                  links = List.empty,
+                  replies = List.empty
+                ),
+                posts = posts
+              )
+            }
+          )
+      )
+      .recover {
+        case e: Exception =>
+          e.printStackTrace()
+          Left(ErrorResponse("Thread unavailable"))
+      }
+  }
 
   override def formatPost(post: FormatPostRequest): FormatPostResponse = ???
 }

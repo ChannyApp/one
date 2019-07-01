@@ -17,7 +17,7 @@ object KohlChanStructs {
     markdown: String,
     postCount: Option[Int],
     lastBump: DateTime,
-    thumb: String
+    thumb: Option[String]
   )
 
   case class KohlChanFileResponse

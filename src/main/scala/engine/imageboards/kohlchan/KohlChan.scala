@@ -114,23 +114,26 @@ class KohlChan(implicit client: Client) extends AbstractImageBoard {
                     content = extracted.content,
                     postsCount = thread.postCount.getOrElse(1),
                     timestamp = (thread.lastBump.clicks / 1000).toInt,
-                    files = List(
-                      {
-                        val parts = thread.thumb.splitAt(8)
-                        val extension = parts._2 match {
-                          case s if s.endsWith("jpeg") || s.endsWith("jpg") => ".jpg"
-                          case s if s.endsWith("png") => ".png"
-                          case s if s.endsWith("webm") => ".webm"
-                          case s if s.endsWith("mp4") => ".mp4"
-                          case s if s.endsWith("gif") => ".gif"
-                        }
-                        File(
-                          name = "File",
-                          full = s"${this.baseURL}${parts._1}${parts._2.drop(2)}$extension",
-                          thumbnail = s"${this.baseURL}${thread.thumb}"
+                    files = thread.thumb.map(
+                      thumbnail =>
+                        List(
+                          {
+                            val parts = thumbnail.splitAt(8)
+                            val extension = parts._2 match {
+                              case s if s.endsWith("jpeg") || s.endsWith("jpg") => ".jpg"
+                              case s if s.endsWith("png") => ".png"
+                              case s if s.endsWith("webm") => ".webm"
+                              case s if s.endsWith("mp4") => ".mp4"
+                              case s if s.endsWith("gif") => ".gif"
+                            }
+                            File(
+                              name = "File",
+                              full = s"${this.baseURL}${parts._1}${parts._2.drop(2)}$extension",
+                              thumbnail = s"${this.baseURL}$thumbnail"
+                            )
+                          }
                         )
-                      }
-                    ),
+                    ).getOrElse(List.empty),
                     decorations = extracted.decorations,
                     links = extracted.links,
                     replies = extracted.replies
