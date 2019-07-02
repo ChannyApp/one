@@ -15,6 +15,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.util.Try
 
 class FourChan(implicit client: Client) extends AbstractImageBoard {
   override val id: Int = 1
@@ -103,7 +104,7 @@ class FourChan(implicit client: Client) extends AbstractImageBoard {
                       end = index + elementText.length,
                       kind = "reply",
                       thread = 0,
-                      post = BigInt(e.attr("href").drop(2))
+                      post = Try(BigInt(e.attr("href").drop(2))).getOrElse(0)
                     )
                 )
             }
