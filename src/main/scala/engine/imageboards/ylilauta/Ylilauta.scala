@@ -27,7 +27,7 @@ class Ylilauta(implicit client: Client) extends AbstractImageBoard {
   )
   override val maxImages: Int = 1
   override val logo: String = "https://channy.io/ylilauta-icon.png"
-  override val label: String = "Юрок, доволен?"
+  override val label: String = ""
   override val highlight: String = "#FFE"
 
   override val boards: List[Board] = Await.result(this.fetchBoards(), Duration.Inf)
