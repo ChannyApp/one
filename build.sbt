@@ -2,7 +2,7 @@ name := "one"
 
 version := "0.1"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.13.0"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8",
