@@ -9,9 +9,6 @@ import engine.entities.Thread
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{ErrorResponse, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
 import engine.imageboards.dvach.Dvach
-import engine.imageboards.fourchan.FourChan
-import engine.imageboards.infinitechan.InfiniteChan
-import engine.imageboards.kohlchan.KohlChan
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,9 +17,9 @@ import scala.concurrent.Future
 class Engine(implicit client: Client) {
   private val imageBoards: List[AbstractImageBoard] = List(
     new Dvach(),
-    new FourChan(),
-    new InfiniteChan(),
-    new KohlChan(),
+    // new FourChan(),
+    // new InfiniteChan(),
+    // new KohlChan(),
     // new Ylilauta()
   )
 
@@ -33,9 +30,8 @@ class Engine(implicit client: Client) {
 
   private val postsCache: Cache[String, FetchPostsResponse] = Caffeine
     .newBuilder()
-    .expireAfterWrite(10, TimeUnit.SECONDS)
+    .expireAfterWrite(5, TimeUnit.SECONDS)
     .build()
-
 
   private def LOG(message: String): Unit = {
     println(s"[SERVER] $message")
