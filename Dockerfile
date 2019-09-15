@@ -1,4 +1,4 @@
-FROM hseeberger/scala-sbt:latest
+FROM hseeberger/scala-sbt:11.0.3_1.2.8_2.13.0
 COPY . .
 RUN sbt assembly && mv target/scala-2.13/server.jar /
 
