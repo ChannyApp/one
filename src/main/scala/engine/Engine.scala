@@ -9,6 +9,7 @@ import engine.entities.Thread
 import engine.imageboards.abstractimageboard.AbstractImageBoard
 import engine.imageboards.abstractimageboard.AbstractImageBoardStructs.{ErrorResponse, FetchPostsResponse, FormatPostRequest, FormatPostResponse}
 import engine.imageboards.dvach.Dvach
+import engine.imageboards.fourchan.FourChan
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
