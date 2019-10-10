@@ -17,10 +17,7 @@ import scala.concurrent.Future
 class Engine(implicit client: Client) {
   private val imageBoards: List[AbstractImageBoard] = List(
     new Dvach(),
-    // new FourChan(),
-    // new InfiniteChan(),
-    // new KohlChan(),
-    // new Ylilauta()
+    new FourChan()
   )
 
   private val threadsCache: Cache[String, List[Thread]] = Caffeine
